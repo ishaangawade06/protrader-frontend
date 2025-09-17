@@ -1,4 +1,4 @@
-// ---------- Firebase Config ----------
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
   authDomain: "protraderhack-d67f0.firebaseapp.com",
@@ -13,46 +13,45 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ---------- Signup ----------
+// Signup
 function signup() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   auth.createUserWithEmailAndPassword(email, password)
-    .then(user => alert("✅ Account created!"))
+    .then(() => alert("✅ Account created!"))
     .catch(err => alert("❌ " + err.message));
 }
 
-// ---------- Login ----------
+// Login
 function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   auth.signInWithEmailAndPassword(email, password)
-    .then(user => alert("✅ Logged in!"))
+    .then(() => alert("✅ Logged in!"))
     .catch(err => alert("❌ " + err.message));
 }
 
-// ---------- Logout ----------
+// Logout
 function logout() {
   auth.signOut();
 }
 
-// ---------- Auth State ----------
+// Auth State Listener
 auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById("auth-screen").style.display = "none";
     document.getElementById("home-screen").style.display = "block";
-    document.getElementById("user-email").innerText = user.email;
 
-    // Load signals from Firestore
-    db.collection("signals").orderBy("created", "desc").limit(10).onSnapshot(snapshot => {
-      const list = document.getElementById("signals-list");
-      list.innerHTML = "";
+    // Load trading signals from Firestore
+    db.collection("signals").onSnapshot(snapshot => {
+      const signalList = document.getElementById("signal-list");
+      signalList.innerHTML = "";
       snapshot.forEach(doc => {
-        const data = doc.data();
-        list.innerHTML += `<li>${data.pair} → ${data.action} @ ${data.price}</li>`;
+        const li = document.createElement("li");
+        li.textContent = doc.data().text;
+        signalList.appendChild(li);
       });
     });
-
   } else {
     document.getElementById("auth-screen").style.display = "block";
     document.getElementById("home-screen").style.display = "none";
