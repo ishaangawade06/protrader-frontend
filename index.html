@@ -1,43 +1,127 @@
-<!-- Home Screen -->
-<div id="home-screen" style="display:none;">
-  <h2>📈 Trading Dashboard</h2>
-  <button onclick="logout()">Logout</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ProTraderHack</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <h3>🔥 Live Trading Signals</h3>
-  <div id="signals">Loading signals...</div>
-</div>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 
-<script>
-  const API_BASE = "https://protraderhack.onrender.com"; // Replace with your deployed backend URL
-
-  // Example: Fetch trading signals
-  async function getSignals() {
-    try {
-      const response = await fetch(`${API_BASE}/signals`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + (await auth.currentUser.getIdToken())
-        }
-      });
-
-      const data = await response.json();
-      console.log("📊 Signals:", data);
-
-      // Show on screen
-      let container = document.createElement("div");
-      container.innerHTML = `<h3>📈 Trading Signals</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
-      document.body.appendChild(container);
-
-    } catch (err) {
-      alert("❌ Error fetching signals: " + err.message);
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-  }
-
-  // Call after login
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      getSignals();
+    #auth-screen, #home-screen {
+      text-align: center;
+      padding: 20px;
+      border-radius: 10px;
+      background: #1e293b;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 350px;
     }
-  });
-</script>
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 6px;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 8px;
+      border: none;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login/Signup Screen -->
+  <div id="auth-screen">
+    <h2>🔒 ProTraderHack Login</h2>
+    <input id="email" type="email" placeholder="Email"><br>
+    <input id="password" type="password" placeholder="Password"><br>
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Home Screen -->
+  <div id="home-screen" style="display:none;">
+    <h2>✅ Welcome to ProTraderHack</h2>
+    <p>You are now logged in. 🚀</p>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+      authDomain: "protraderhack-d67f0.firebaseapp.com",
+      projectId: "protraderhack-d67f0",
+      storageBucket: "protraderhack-d67f0.firebasestorage.app",
+      messagingSenderId: "1062485216321",
+      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Signup
+    function signup() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(user => {
+          alert("✅ Account created!");
+        })
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    // Login
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(user => {
+          alert("✅ Logged in!");
+        })
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    // Logout
+    function logout() {
+      auth.signOut();
+    }
+
+    // Auth state listener
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById("auth-screen").style.display = "none";
+        document.getElementById("home-screen").style.display = "block";
+      } else {
+        document.getElementById("auth-screen").style.display = "block";
+        document.getElementById("home-screen").style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
