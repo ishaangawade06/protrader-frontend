@@ -56,13 +56,14 @@
 
   <!-- Home Screen -->
   <div id="home-screen" style="display:none;">
-    <h2>✅ Welcome to ProTraderHack</h2>
-    <p>You are now logged in!</p>
+    <h2>📊 Trading Signals Dashboard</h2>
+    <div id="signals"></div>
+    <br>
     <button onclick="logout()">Logout</button>
   </div>
 
   <script>
-    // Firebase Config
+    // Firebase Config (same as before)
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
@@ -72,12 +73,14 @@
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
 
-    // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Signup function
+    // Replace this with your backend URL (FastAPI)
+    const API_BASE = "https://protraderhack.onrender.com";
+
+    // Signup
     function signup() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -88,13 +91,14 @@
         .catch(err => alert("❌ " + err.message));
     }
 
-    // Login function
+    // Login
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       auth.signInWithEmailAndPassword(email, password)
         .then(user => {
           alert("✅ Logged in!");
+          loadSignals();
         })
         .catch(err => alert("❌ " + err.message));
     }
@@ -109,11 +113,33 @@
       if (user) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("home-screen").style.display = "block";
+        loadSignals();
       } else {
         document.getElementById("auth-screen").style.display = "block";
         document.getElementById("home-screen").style.display = "none";
       }
     });
+
+    // Load trading signals from backend
+    async function loadSignals() {
+      try {
+        let res = await fetch(`${API_BASE}/signals`);
+        let data = await res.json();
+        let html = "";
+        data.forEach(sig => {
+          html += `
+            <div style="border:1px solid #ddd; padding:10px; margin:10px;">
+              <strong>${sig.symbol}</strong> - ${sig.signal} <br>
+              📈 Entry: ${sig.entry} | 🎯 Target: ${sig.target} | 🛑 Stop: ${sig.stoploss}
+            </div>
+          `;
+        });
+        document.getElementById("signals").innerHTML = html;
+      } catch (e) {
+        console.error(e);
+        document.getElementById("signals").innerHTML = "⚠️ Failed to load signals.";
+      }
+    }
   </script>
 </body>
 </html>
