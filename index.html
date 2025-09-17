@@ -22,20 +22,12 @@
 
   <!-- Home Screen -->
   <div id="home-screen" style="display:none;">
-    <h2>📊 Trading Dashboard</h2>
+    <h2>✅ Welcome to ProTraderHack</h2>
     <button onclick="logout()">Logout</button>
 
-    <!-- Latest Signal -->
-    <div id="signal-box" style="margin-top:20px;">
-      <h3>📊 Latest Trading Signal</h3>
-      <pre id="signal-data">Loading...</pre>
-      <button onclick="fetchSignal()">🔄 Refresh</button>
-    </div>
-
-    <!-- Signal History -->
-    <div id="signals" style="margin-top:20px;">
-      Loading signals...
-    </div>
+    <!-- Signals Section -->
+    <h3>📊 Latest Trading Signals</h3>
+    <div id="signals"></div>
   </div>
 
   <script>
@@ -54,10 +46,7 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ===== Backend API URL =====
-    const API_URL = "https://protraderhack.onrender.com"; // replace with your Render URL
-
-    // Signup function
+    // Signup
     function signup() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -66,7 +55,7 @@
         .catch(err => alert("❌ " + err.message));
     }
 
-    // Login function
+    // Login
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -80,58 +69,38 @@
       auth.signOut();
     }
 
+    // Load Signals from Firestore
+    function loadSignals() {
+      db.collection("signals")
+        .orderBy("time", "desc")
+        .limit(10)
+        .onSnapshot(snapshot => {
+          const signalsDiv = document.getElementById("signals");
+          signalsDiv.innerHTML = "";
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            signalsDiv.innerHTML += `
+              <div style="border:1px solid #ccc; margin:8px; padding:8px; border-radius:6px;">
+                <b>${data.asset}</b> → ${data.action} <br>
+                Entry: ${data.entry} | TP: ${data.takeProfit} | SL: ${data.stopLoss} <br>
+                <small>${new Date(data.time).toLocaleString()}</small>
+              </div>
+            `;
+          });
+        });
+    }
+
     // Detect auth state
     auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("home-screen").style.display = "block";
-        fetchSignal();
-        loadSignals();
+        loadSignals(); // load when logged in
       } else {
         document.getElementById("auth-screen").style.display = "block";
         document.getElementById("home-screen").style.display = "none";
       }
     });
-
-    // Fetch latest signal
-    async function fetchSignal() {
-      const apiKey = "demo123"; // replace with real key later
-      const url = `${API_URL}/api/signal?api_key=${apiKey}`;
-
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.error) {
-          document.getElementById("signal-data").innerText = "❌ " + data.error;
-        } else {
-          document.getElementById("signal-data").innerText =
-            JSON.stringify(data.signal, null, 2);
-        }
-      } catch (err) {
-        document.getElementById("signal-data").innerText = "⚠️ Failed to fetch signal";
-      }
-    }
-
-    // Fetch signal history
-    async function loadSignals() {
-      try {
-        const res = await fetch(`${API_URL}/signals`);
-        const data = await res.json();
-
-        let html = "";
-        data.forEach(sig => {
-          html += `
-            <div style="border:1px solid #ddd; padding:10px; margin:5px;">
-              <b>${sig.pair}</b> → ${sig.action} @ ${sig.price}<br>
-              ⏱ Time: ${sig.time}
-            </div>`;
-        });
-        document.getElementById("signals").innerHTML = html;
-      } catch (err) {
-        document.getElementById("signals").innerHTML = "❌ Failed to load signals.";
-        console.error(err);
-      }
-    }
   </script>
 </body>
-  </html>
+</html>
