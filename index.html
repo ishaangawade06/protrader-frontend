@@ -1,107 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ProTrader - Frontend</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <style>
-    body { background:#071027; color:#e6eef8; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; }
-    .card { background:#0f1724; padding:16px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.6); }
-    .small { font-size:0.9rem; color:#9fb3d8; }
-  </style>
+  <meta charset="UTF-8">
+  <title>ProTraderHack</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 </head>
-<body class="p-4">
+<body>
+  <!-- Login/Signup Screen -->
+  <div id="auth-screen">
+    <h2>🔒 ProTraderHack Login</h2>
+    <input id="email" type="email" placeholder="Email"><br><br>
+    <input id="password" type="password" placeholder="Password"><br><br>
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Login</button>
+  </div>
 
-  <!-- HEADER -->
-  <header class="flex items-center justify-between mb-4">
-    <div class="flex items-center gap-3">
-      <img src="logo.png" alt="PTH" style="width:44px;height:44px;border-radius:8px">
-      <h1 class="text-xl font-bold text-green-300">ProTraderHack</h1>
-    </div>
-    <div>
-      <button id="profileBtn" class="px-3 py-1 rounded bg-gray-800 small hidden">Profile</button>
-      <button id="logoutBtn" class="px-3 py-1 rounded bg-red-600 small hidden">Logout</button>
-    </div>
-  </header>
+  <!-- Home Screen -->
+  <div id="home-screen" style="display:none;">
+    <h2>✅ Welcome to ProTraderHack</h2>
+    <button onclick="logout()">Logout</button>
+    <br><br>
 
-  <!-- AUTH -->
-  <section id="authSection" class="max-w-md mx-auto card">
-    <h2 class="text-lg font-semibold mb-3">🔐 Sign up / Login</h2>
-    <input id="name" placeholder="Full name (required)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <input id="username" placeholder="Username (letters+numbers, max 12)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <input id="phone" placeholder="Mobile number (required)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <input id="dob" placeholder="Date of Birth (YYYY-MM-DD)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <input id="password" type="password" placeholder="Password (min 6 chars)" class="w-full p-2 mb-3 rounded bg-gray-900" />
-    <div class="flex gap-3">
-      <button id="signupBtn" class="flex-1 py-2 rounded bg-blue-600">Sign Up</button>
-      <button id="loginBtn" class="flex-1 py-2 rounded bg-green-600">Login</button>
-    </div>
-    <p class="small mt-3">By signing up you agree to the Terms & Conditions (required) — checkbox shown after first submit.</p>
-  </section>
-
-  <!-- LOCKED HOME -->
-  <section id="lockedHome" class="hidden max-w-3xl mx-auto mt-6 text-center">
-    <div class="card p-10">
-      <div style="font-size:50px">🔒</div>
-      <p class="mt-3 small">Enter your app key to unlock ProTraderHack features</p>
-      <input id="appKey" placeholder="Enter key" class="w-full p-2 mt-3 rounded bg-gray-900" />
-      <button id="unlockBtn" class="mt-3 px-6 py-2 rounded bg-indigo-600">Unlock</button>
-      <p id="unlockStatus" class="small mt-2"></p>
-    </div>
-  </section>
-
-  <!-- UNLOCKED DASHBOARD -->
-  <section id="dashboard" class="hidden max-w-6xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-    <!-- Main Chart area (placeholder) -->
-    <div class="md:col-span-2 card">
-      <div class="flex justify-between items-center mb-2">
-        <div>
-          <h2 class="text-xl font-bold" id="chartSymbol">Select a symbol</h2>
-          <div class="small" id="chartBalance">Broker balances: —</div>
-        </div>
-        <div>
-          <input id="searchBox" placeholder="Search (BTC, XAUUSD, RELIANCE.NS...)" class="p-2 rounded bg-gray-900" />
-        </div>
-      </div>
-      <div id="chartArea" style="height:420px; border-radius:10px; background:linear-gradient(180deg,#071028,#02121d);" class="flex items-center justify-center small">
-        Trading chart placeholder — in production you will embed a charting library (TradingView-like)
-      </div>
-      <div class="flex gap-3 mt-3">
-        <button id="buyBtn" class="px-4 py-2 rounded bg-green-500">Buy</button>
-        <button id="sellBtn" class="px-4 py-2 rounded bg-red-500">Sell</button>
-        <select id="timeframeSelect" class="p-2 rounded bg-gray-900">
-          <option>1m</option><option>5m</option><option>15m</option><option>1h</option><option>1d</option>
-        </select>
-      </div>
-
-      <div class="mt-4 small" id="signalProof">
-        <!-- Place signal proof elements (support/res, fibo, pattern, highlighted candle) here -->
-      </div>
-    </div>
-
-    <!-- Right column: watchlist / signals -->
-    <aside class="card">
-      <h3 class="font-semibold mb-2">Watchlist</h3>
-      <ul id="watchlist" class="small space-y-2">
-        <li>No items — use the search to add.</li>
-      </ul>
-
-      <hr class="my-3 border-gray-700" />
-
-      <h3 class="font-semibold mb-2">Recent signals</h3>
-      <ul id="recentSignals" class="small space-y-2"></ul>
-    </aside>
-  </section>
-
-  <!-- Firebase compat scripts (ensures old-style API works) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <h3>📊 Trading Signals</h3>
+    <button onclick="getSignals()">Get Latest Signals</button>
+    <div id="signals-box"></div>
+  </div>
 
   <script>
-    // === FIREBASE CONFIG - replace with your own from Firebase Console if different ===
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
@@ -110,126 +41,68 @@
       messagingSenderId: "1062485216321",
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
-    firebase.initializeApp(firebaseConfig);
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // --- UI elements
-    const authSection = document.getElementById('authSection');
-    const lockedHome = document.getElementById('lockedHome');
-    const dashboard = document.getElementById('dashboard');
-    const homeLogout = document.getElementById('logoutBtn');
-
-    // Basic signup/login (saves user profile to Firestore)
-    document.getElementById('signupBtn').onclick = async () => {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      const name = document.getElementById('name').value.trim();
-      const username = document.getElementById('username').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      const dob = document.getElementById('dob').value.trim();
-      if (!name || !username || !phone) { alert('Name, username and mobile are required'); return; }
-      try {
-        const u = await auth.createUserWithEmailAndPassword(email, password);
-        await db.collection('users').doc(u.user.uid).set({ name, username, phone, dob, created: new Date().toISOString() });
-        alert('Account created — now login');
-      } catch (e) { alert('Signup error: ' + e.message); }
-    };
-
-    document.getElementById('loginBtn').onclick = async () => {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      try {
-        await auth.signInWithEmailAndPassword(email, password);
-      } catch (e) { alert('Login error: ' + e.message); }
-    };
-
-    // Unlock / keys
-    document.getElementById('unlockBtn').onclick = async () => {
-      const key = document.getElementById('appKey').value.trim();
-      if (!key) { document.getElementById('unlockStatus').innerText = 'Enter a key'; return; }
-      // call backend /owner/validate or rely on Firestore keys collection - we keep it simple: check keys collection
-      try {
-        const ksnap = await db.collection('keys').doc(key).get();
-        if (!ksnap.exists) {
-          // fallback: owner keys stored by hash? Notify owner request — for now deny
-          document.getElementById('unlockStatus').innerText = 'Invalid key — request access';
-          return;
-        }
-        const kdata = ksnap.data();
-        // check expiry if exists
-        if (kdata.expiry && new Date(kdata.expiry) < new Date()) {
-          document.getElementById('unlockStatus').innerText = 'Key expired — request owner to re-enable';
-          // optionally create a request entry
-          await db.collection('key_requests').add({ key, user: auth.currentUser.uid, ts: new Date().toISOString() });
-          return;
-        }
-        // success
-        document.getElementById('unlockStatus').innerText = 'Unlocked ✅';
-        showUnlockedUI();
-      } catch (e) {
-        document.getElementById('unlockStatus').innerText = 'Error checking key: ' + e.message;
-      }
-    };
-
-    function showUnlockedUI(){
-      lockedHome.classList.add('hidden');
-      dashboard.classList.remove('hidden');
+    // Signup function
+    function signup() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(user => {
+          alert("✅ Account created!");
+        })
+        .catch(err => alert("❌ " + err.message));
     }
 
-    // Auth state changes
+    // Login function
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(user => {
+          alert("✅ Logged in!");
+        })
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    // Logout
+    function logout() {
+      auth.signOut();
+    }
+
+    // Detect auth state
     auth.onAuthStateChanged(user => {
       if (user) {
-        authSection.style.display = 'none';
-        lockedHome.style.display = '';
-        document.getElementById('logoutBtn').classList.remove('hidden');
+        document.getElementById("auth-screen").style.display = "none";
+        document.getElementById("home-screen").style.display = "block";
       } else {
-        authSection.style.display = '';
-        lockedHome.style.display = 'none';
-        dashboard.style.display = 'none';
-        document.getElementById('logoutBtn').classList.add('hidden');
+        document.getElementById("auth-screen").style.display = "block";
+        document.getElementById("home-screen").style.display = "none";
       }
     });
 
-    document.getElementById('logoutBtn').onclick = () => auth.signOut();
+    // Fetch Signals from Backend
+    async function getSignals() {
+      try {
+        // Replace with your deployed backend URL
+        const res = await fetch("https://your-backend-url.onrender.com/api/signals");
+        const data = await res.json();
 
-    // Listen realtime signals (shows last 10 signals)
-    const recentSignals = document.getElementById('recentSignals');
-    db.collection('signals').orderBy('timestamp','desc').limit(20).onSnapshot(snap => {
-      recentSignals.innerHTML = '';
-      snap.forEach(d => {
-        const s = d.data();
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${s.symbol}</strong> — ${s.signal} @ ${s.last_price} <div class="small">${(s.reasons||[]).join(', ')}</div>`;
-        recentSignals.appendChild(li);
-      });
-    });
+        let html = "";
+        data.forEach(sig => {
+          html += `<p>📈 ${sig.symbol} → ${sig.action} at ${sig.price}</p>`;
+        });
 
-    // Search quick-add (simple front-end watchlist stored per user)
-    document.getElementById('searchBox').addEventListener('keydown', async (e)=>{
-      if (e.key === 'Enter') {
-        const v = e.target.value.trim();
-        if (!v) return;
-        const uid = auth.currentUser ? auth.currentUser.uid : 'anon';
-        await db.collection('users').doc(uid).collection('watchlist').doc(v).set({ symbol: v, added: new Date().toISOString() });
-        loadWatchlist(uid);
-        e.target.value = '';
+        document.getElementById("signals-box").innerHTML = html;
+      } catch (err) {
+        document.getElementById("signals-box").innerHTML = "❌ Failed to load signals.";
+        console.error(err);
       }
-    });
-
-    async function loadWatchlist(uid){
-      const listEl = document.getElementById('watchlist');
-      listEl.innerHTML = '';
-      const snap = await db.collection('users').doc(uid).collection('watchlist').get();
-      if (snap.empty) listEl.innerHTML = '<li class="small">No items yet</li>';
-      snap.forEach(d => {
-        const data = d.data();
-        const li = document.createElement('li');
-        li.innerHTML = `<div>${data.symbol}</div>`;
-        listEl.appendChild(li);
-      });
     }
-
   </script>
 </body>
-  </html>
+  </html>    
