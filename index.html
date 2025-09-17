@@ -1,121 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>ProTraderHack</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Home Screen -->
+<div id="home-screen" style="display:none;">
+  <h2>📈 Trading Dashboard</h2>
+  <button onclick="logout()">Logout</button>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+  <h3>🔥 Live Trading Signals</h3>
+  <div id="signals">Loading signals...</div>
+</div>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0d1117;
-      color: #fff;
-      text-align: center;
-      padding: 40px;
-    }
-    input {
-      padding: 10px;
-      margin: 8px;
-      border: none;
-      border-radius: 5px;
-      width: 250px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      border: none;
-      border-radius: 5px;
-      background: #2563eb;
-      color: #fff;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    button:hover {
-      background: #1e40af;
-    }
-    h2 {
-      margin-bottom: 20px;
-    }
-    #home-screen {
-      margin-top: 30px;
-    }
-  </style>
-</head>
-<body>
-  <!-- Login/Signup Screen -->
-  <div id="auth-screen">
-    <h2>🔒 ProTraderHack Login</h2>
-    <input id="email" type="email" placeholder="Enter Email"><br>
-    <input id="password" type="password" placeholder="Enter Password"><br>
-    <button onclick="signup()">Sign Up</button>
-    <button onclick="login()">Login</button>
-  </div>
+<script>
+  const API_BASE = "https://protraderhack.onrender.com"; // replace with your backend
 
-  <!-- Home Screen -->
-  <div id="home-screen" style="display:none;">
-    <h2>✅ Welcome to ProTraderHack</h2>
-    <p>You are logged in successfully!</p>
-    <button onclick="logout()">Logout</button>
-  </div>
-
-  <script>
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
-      authDomain: "protraderhack-d67f0.firebaseapp.com",
-      projectId: "protraderhack-d67f0",
-      storageBucket: "protraderhack-d67f0.firebasestorage.app",
-      messagingSenderId: "1062485216321",
-      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
-    };
-
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // Signup function
-    function signup() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(user => {
-          alert("✅ Account created!");
-        })
-        .catch(err => alert("❌ " + err.message));
+  // Fetch signals from backend
+  async function loadSignals() {
+    try {
+      const res = await fetch(`${API_BASE}/api/signals`, {
+        headers: { "Authorization": "Bearer " + (auth.currentUser ? await auth.currentUser.getIdToken() : "") }
+      });
+      const data = await res.json();
+      document.getElementById("signals").innerHTML = data.signals
+        .map(s => `<p>📊 ${s.pair} → ${s.action} @ ${s.price}</p>`)
+        .join("");
+    } catch (err) {
+      document.getElementById("signals").innerHTML = "❌ Failed to load signals";
+      console.error(err);
     }
+  }
 
-    // Login function
-    function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, password)
-        .then(user => {
-          alert("✅ Logged in!");
-        })
-        .catch(err => alert("❌ " + err.message));
+  // When user logs in, load dashboard data
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("auth-screen").style.display = "none";
+      document.getElementById("home-screen").style.display = "block";
+      loadSignals(); // 👈 load signals once logged in
+    } else {
+      document.getElementById("auth-screen").style.display = "block";
+      document.getElementById("home-screen").style.display = "none";
     }
-
-    // Logout
-    function logout() {
-      auth.signOut();
-    }
-
-    // Detect auth state
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById("auth-screen").style.display = "none";
-        document.getElementById("home-screen").style.display = "block";
-      } else {
-        document.getElementById("auth-screen").style.display = "block";
-        document.getElementById("home-screen").style.display = "none";
-      }
-    });
-  </script>
-</body>
-</html>
+  });
+        </script>
