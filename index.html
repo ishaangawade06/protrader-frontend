@@ -5,10 +5,13 @@
   <title>ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <!-- Login/Signup Screen -->
@@ -24,85 +27,14 @@
   <div id="home-screen" style="display:none;">
     <h2>✅ Welcome to ProTraderHack</h2>
     <button onclick="logout()">Logout</button>
-    <br><br>
 
-    <h3>📊 Trading Signals</h3>
-    <button onclick="getSignals()">Get Latest Signals</button>
-    <div id="signals-box"></div>
+    <div id="signals">
+      <h3>📊 Trading Signals</h3>
+      <ul id="signal-list"></ul>
+    </div>
   </div>
 
-  <script>
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
-      authDomain: "protraderhack-d67f0.firebaseapp.com",
-      projectId: "protraderhack-d67f0",
-      storageBucket: "protraderhack-d67f0.firebasestorage.app",
-      messagingSenderId: "1062485216321",
-      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
-    };
-
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // Signup function
-    function signup() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(user => {
-          alert("✅ Account created!");
-        })
-        .catch(err => alert("❌ " + err.message));
-    }
-
-    // Login function
-    function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, password)
-        .then(user => {
-          alert("✅ Logged in!");
-        })
-        .catch(err => alert("❌ " + err.message));
-    }
-
-    // Logout
-    function logout() {
-      auth.signOut();
-    }
-
-    // Detect auth state
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById("auth-screen").style.display = "none";
-        document.getElementById("home-screen").style.display = "block";
-      } else {
-        document.getElementById("auth-screen").style.display = "block";
-        document.getElementById("home-screen").style.display = "none";
-      }
-    });
-
-    // Fetch Signals from Backend
-    async function getSignals() {
-      try {
-        // Replace with your deployed backend URL
-        const res = await fetch("https://your-backend-url.onrender.com/api/signals");
-        const data = await res.json();
-
-        let html = "";
-        data.forEach(sig => {
-          html += `<p>📈 ${sig.symbol} → ${sig.action} at ${sig.price}</p>`;
-        });
-
-        document.getElementById("signals-box").innerHTML = html;
-      } catch (err) {
-        document.getElementById("signals-box").innerHTML = "❌ Failed to load signals.";
-        console.error(err);
-      }
-    }
-  </script>
+  <!-- Scripts -->
+  <script src="app.js"></script>
 </body>
-  </html>    
+</html>
