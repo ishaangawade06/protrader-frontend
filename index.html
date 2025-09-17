@@ -24,9 +24,9 @@
   <div id="home-screen" style="display:none;">
     <h2>✅ Welcome to ProTraderHack</h2>
     <button onclick="logout()">Logout</button>
-
-    <!-- Signals Section -->
-    <h3>📊 Latest Trading Signals</h3>
+    <hr>
+    <h3>📈 Trading Signals</h3>
+    <button onclick="loadSignals()">Load Signals</button>
     <div id="signals"></div>
   </div>
 
@@ -69,38 +69,38 @@
       auth.signOut();
     }
 
-    // Load Signals from Firestore
-    function loadSignals() {
-      db.collection("signals")
-        .orderBy("time", "desc")
-        .limit(10)
-        .onSnapshot(snapshot => {
-          const signalsDiv = document.getElementById("signals");
-          signalsDiv.innerHTML = "";
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            signalsDiv.innerHTML += `
-              <div style="border:1px solid #ccc; margin:8px; padding:8px; border-radius:6px;">
-                <b>${data.asset}</b> → ${data.action} <br>
-                Entry: ${data.entry} | TP: ${data.takeProfit} | SL: ${data.stopLoss} <br>
-                <small>${new Date(data.time).toLocaleString()}</small>
-              </div>
-            `;
-          });
-        });
-    }
-
-    // Detect auth state
+    // Auth state
     auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("home-screen").style.display = "block";
-        loadSignals(); // load when logged in
       } else {
         document.getElementById("auth-screen").style.display = "block";
         document.getElementById("home-screen").style.display = "none";
       }
     });
+
+    // Load Trading Signals from Backend
+    async function loadSignals() {
+      const signalsDiv = document.getElementById("signals");
+      signalsDiv.innerHTML = "⏳ Loading signals...";
+
+      try {
+        // Replace with your Render backend URL
+        const response = await fetch("https://protraderhack.onrender.com/api/signals");
+        const data = await response.json();
+
+        signalsDiv.innerHTML = "";
+        data.signals.forEach(sig => {
+          const p = document.createElement("p");
+          p.textContent = `📊 ${sig.pair} → ${sig.signal} @ ${sig.price}`;
+          signalsDiv.appendChild(p);
+        });
+      } catch (err) {
+        signalsDiv.innerHTML = "❌ Failed to load signals.";
+        console.error(err);
+      }
+    }
   </script>
 </body>
 </html>
