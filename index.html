@@ -21,14 +21,30 @@
   </div>
 
   <!-- Home Screen -->
-  <div id="home-screen" style="display:none;">
-    <h2>✅ Welcome to ProTraderHack</h2>
-    <button onclick="logout()">Logout</button>
-    <hr>
-    <h3>📈 Live Trading Signals</h3>
-    <div id="signals">Loading signals...</div>
+  <div id="signal-box">
+  <h3>📊 Latest Trading Signal</h3>
+  <pre id="signal-data">Loading...</pre>
+  <button onclick="fetchSignal()">🔄 Refresh</button>
   </div>
 
+async function fetchSignal() {
+  const apiKey = "demo123"; // replace with real key later
+  const url = "https://protraderhack.onrender.com/api/signal?api_key=" + apiKey;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) {
+      document.getElementById("signal-data").innerText = "❌ " + data.error;
+    } else {
+      document.getElementById("signal-data").innerText =
+        JSON.stringify(data.signal, null, 2);
+    }
+  } catch (err) {
+    document.getElementById("signal-data").innerText = "⚠️ Failed to fetch signal";
+  }
+}
+  
   <script>
     // Firebase Config
     const firebaseConfig = {
