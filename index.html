@@ -8,33 +8,36 @@
 </div>
 
 <script>
-  const API_BASE = "https://protraderhack.onrender.com"; // replace with your backend
+  const API_BASE = "https://protraderhack.onrender.com"; // Replace with your deployed backend URL
 
-  // Fetch signals from backend
-  async function loadSignals() {
+  // Example: Fetch trading signals
+  async function getSignals() {
     try {
-      const res = await fetch(`${API_BASE}/api/signals`, {
-        headers: { "Authorization": "Bearer " + (auth.currentUser ? await auth.currentUser.getIdToken() : "") }
+      const response = await fetch(`${API_BASE}/signals`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + (await auth.currentUser.getIdToken())
+        }
       });
-      const data = await res.json();
-      document.getElementById("signals").innerHTML = data.signals
-        .map(s => `<p>📊 ${s.pair} → ${s.action} @ ${s.price}</p>`)
-        .join("");
+
+      const data = await response.json();
+      console.log("📊 Signals:", data);
+
+      // Show on screen
+      let container = document.createElement("div");
+      container.innerHTML = `<h3>📈 Trading Signals</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+      document.body.appendChild(container);
+
     } catch (err) {
-      document.getElementById("signals").innerHTML = "❌ Failed to load signals";
-      console.error(err);
+      alert("❌ Error fetching signals: " + err.message);
     }
   }
 
-  // When user logs in, load dashboard data
+  // Call after login
   auth.onAuthStateChanged(user => {
     if (user) {
-      document.getElementById("auth-screen").style.display = "none";
-      document.getElementById("home-screen").style.display = "block";
-      loadSignals(); // 👈 load signals once logged in
-    } else {
-      document.getElementById("auth-screen").style.display = "block";
-      document.getElementById("home-screen").style.display = "none";
+      getSignals();
     }
   });
-        </script>
+</script>
