@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
@@ -11,96 +12,27 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 </head>
 <body>
-  <!-- Login/Signup Screen -->
-  <div id="auth-screen">
+  <!-- Auth Screen -->
+  <div id="auth-screen" class="screen">
     <h2>🔒 ProTraderHack Login</h2>
-    <input id="email" type="email" placeholder="Email"><br><br>
-    <input id="password" type="password" placeholder="Password"><br><br>
+    <input id="email" type="email" placeholder="Email"><br>
+    <input id="password" type="password" placeholder="Password"><br>
     <button onclick="signup()">Sign Up</button>
     <button onclick="login()">Login</button>
   </div>
 
   <!-- Home Screen -->
-  <div id="home-screen" style="display:none;">
-    <h2>✅ Welcome to ProTraderHack</h2>
+  <div id="home-screen" class="screen" style="display:none;">
+    <h2>📊 ProTraderHack Dashboard</h2>
     <button onclick="logout()">Logout</button>
 
-    <h3>📈 Latest Trading Signals</h3>
-    <ul id="signals-list">
-      <li>Loading...</li>
-    </ul>
+    <div id="signal-section">
+      <h3>🔥 Live Trading Signals</h3>
+      <ul id="signals"></ul>
+    </div>
   </div>
 
-  <script>
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
-      authDomain: "protraderhack-d67f0.firebaseapp.com",
-      projectId: "protraderhack-d67f0",
-      storageBucket: "protraderhack-d67f0.firebasestorage.app",
-      messagingSenderId: "1062485216321",
-      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
-    };
-
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // Signup
-    function signup() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(user => alert("✅ Account created!"))
-        .catch(err => alert("❌ " + err.message));
-    }
-
-    // Login
-    function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, password)
-        .then(user => alert("✅ Logged in!"))
-        .catch(err => alert("❌ " + err.message));
-    }
-
-    // Logout
-    function logout() {
-      auth.signOut();
-    }
-
-    // Listen for auth state
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById("auth-screen").style.display = "none";
-        document.getElementById("home-screen").style.display = "block";
-        loadSignals();
-      } else {
-        document.getElementById("auth-screen").style.display = "block";
-        document.getElementById("home-screen").style.display = "none";
-      }
-    });
-
-    // Load signals from Firestore
-    function loadSignals() {
-      const list = document.getElementById("signals-list");
-      list.innerHTML = "<li>Loading...</li>";
-
-      db.collection("signals").orderBy("time", "desc").limit(10).onSnapshot(snapshot => {
-        list.innerHTML = "";
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const li = document.createElement("li");
-          li.textContent = `${data.symbol} → ${data.action} at ${data.price} (${data.time})`;
-          list.appendChild(li);
-        });
-
-        if (snapshot.empty) {
-          list.innerHTML = "<li>No signals yet</li>";
-        }
-      });
-    }
-  </script>
+  <!-- Custom App Script -->
+  <script src="app.js"></script>
 </body>
 </html>
