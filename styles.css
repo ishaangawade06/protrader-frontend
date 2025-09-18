@@ -1,44 +1,66 @@
-body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  margin: 40px;
-  background: #f9f9f9;
-  color: #333;
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+  authDomain: "protraderhack-d67f0.firebaseapp.com",
+  projectId: "protraderhack-d67f0",
+  storageBucket: "protraderhack-d67f0.firebasestorage.app",
+  messagingSenderId: "1062485216321",
+  appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
+};
+
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Auth Functions
+function signup() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => alert("✅ Account created!"))
+    .catch(err => alert("❌ " + err.message));
 }
 
-#auth-screen, #home-screen {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 20px;
-  max-width: 350px;
-  margin: auto;
-  background: white;
-  box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => alert("✅ Logged in!"))
+    .catch(err => alert("❌ " + err.message));
 }
 
-input {
-  width: 90%;
-  padding: 10px;
-  margin: 8px 0;
-  border-radius: 5px;
-  border: 1px solid #aaa;
+function logout() {
+  auth.signOut();
 }
 
-button {
-  padding: 10px 15px;
-  margin: 5px;
-  border: none;
-  border-radius: 5px;
-  background: #0077ff;
-  color: white;
-  cursor: pointer;
-}
+// Switch UI on login/logout
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById("auth-screen").style.display = "none";
+    document.getElementById("home-screen").style.display = "block";
+    fetchSignals();
+  } else {
+    document.getElementById("auth-screen").style.display = "block";
+    document.getElementById("home-screen").style.display = "none";
+  }
+});
 
-button:hover {
-  background: #005bcc;
-}
+// Fetch trading signals from backend API
+async function fetchSignals() {
+  try {
+    const res = await fetch("https://your-backend-url.com/api/signals"); 
+    const data = await res.json();
 
-#signals {
-  margin-top: 20px;
-  text-align: left;
+    const signalsList = document.getElementById("signals");
+    signalsList.innerHTML = "";
+
+    data.forEach(signal => {
+      const li = document.createElement("li");
+      li.innerText = `${signal.asset} → ${signal.direction} @ ${signal.entry}`;
+      signalsList.appendChild(li);
+    });
+  } catch (err) {
+    console.error("Error fetching signals:", err);
+  }
 }
