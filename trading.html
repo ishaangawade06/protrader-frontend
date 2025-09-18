@@ -1,0 +1,62 @@
+<!-- trading.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PTH — Trading</title>
+
+  <!-- lightweight-charts for candlestick -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
+  <!-- Firebase (compat, if your existing code used firebase.* globals) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">PTH • Trading</div>
+    <button id="logoutBtn" class="btn small">Logout</button>
+  </header>
+
+  <main class="container">
+    <section class="left">
+      <div class="card">
+        <h3>Live Signals</h3>
+        <div id="signalsList">Loading signals…</div>
+      </div>
+
+      <div class="card">
+        <h3>Account P&L</h3>
+        <div id="pnl">—</div>
+      </div>
+    </section>
+
+    <section class="right">
+      <div class="card">
+        <div id="chart" style="height:320px;"></div>
+        <div class="chart-controls">
+          <input id="symbolInput" placeholder="Symbol (e.g. BTCUSDT)" value="BTCUSDT" />
+          <select id="rangeSelect">
+            <option value="1h">1h</option>
+            <option value="15m">15m</option>
+            <option value="4h">4h</option>
+            <option value="1d">1d</option>
+          </select>
+          <button id="loadChartBtn" class="btn">Load Chart</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Your firebase init (if index.html already initializes firebase on login page you can skip) -->
+  <script src="firebase-init.js"></script>
+
+  <!-- config + api + business logic -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="trading.js"></script>
+</body>
+  </html>
