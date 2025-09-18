@@ -12,43 +12,33 @@
 
   <style>
     body {
+      font-family: Arial, sans-serif;
+      text-align: center;
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
-      background: #111;
+    }
+    #auth-screen {
+      padding: 20px;
+      position: relative;
+      height: 100vh;
+    }
+    #skip-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: #007bff;
       color: white;
-      text-align: center;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
     }
-    #loading-screen {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    #auth-screen, #home-screen {
-      display: none;
+    #home-screen {
+      padding: 20px;
     }
   </style>
 </head>
 <body>
-
-  <!-- Loading Screen -->
-  <div id="loading-screen">
-    <video autoplay muted playsinline id="introVideo">
-      <source src="VID-20250904-WA0075.mp4" type="video/mp4">
-      Your browser does not support video.
-    </video>
-  </div>
-
   <!-- Login/Signup Screen -->
   <div id="auth-screen">
     <h2>🔒 ProTraderHack Login</h2>
@@ -56,10 +46,13 @@
     <input id="password" type="password" placeholder="Password"><br><br>
     <button onclick="signup()">Sign Up</button>
     <button onclick="login()">Login</button>
+
+    <!-- Skip Button -->
+    <button id="skip-btn" onclick="skipLogin()">Skip</button>
   </div>
 
   <!-- Home Screen -->
-  <div id="home-screen">
+  <div id="home-screen" style="display:none;">
     <h2>✅ Welcome to ProTraderHack</h2>
     <button onclick="logout()">Logout</button>
   </div>
@@ -75,16 +68,10 @@
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
 
+    // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-
-    // Hide video after it finishes
-    const video = document.getElementById("introVideo");
-    video.onended = () => {
-      document.getElementById("loading-screen").style.display = "none";
-      document.getElementById("auth-screen").style.display = "block";
-    };
 
     // Signup
     function signup() {
@@ -109,14 +96,17 @@
       auth.signOut();
     }
 
+    // Skip Login
+    function skipLogin() {
+      document.getElementById("auth-screen").style.display = "none";
+      document.getElementById("home-screen").style.display = "block";
+    }
+
     // Detect auth state
     auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("home-screen").style.display = "block";
-      } else {
-        document.getElementById("auth-screen").style.display = "block";
-        document.getElementById("home-screen").style.display = "none";
       }
     });
   </script>
