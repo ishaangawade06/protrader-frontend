@@ -1,51 +1,23 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: white;
-  margin: 0;
-  padding: 20px;
-  text-align: center;
-}
-
-.screen {
-  margin-top: 50px;
-}
-
-input {
-  padding: 10px;
-  margin: 5px;
-  width: 80%;
-  border: none;
-  border-radius: 8px;
-}
-
-button {
-  background: #1e40af;
-  color: white;
-  padding: 10px 15px;
-  margin: 5px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #2563eb;
-}
-
-#signal-section {
-  margin-top: 30px;
-  text-align: left;
-}
-
-#signals {
-  list-style: none;
-  padding: 0;
-}
-
-#signals li {
-  background: #1e293b;
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 8px;
+/* styles.css - mobile first */
+body { font-family: system-ui, -apple-system, Roboto, Arial; margin:0; background:#07111a; color:#e6eef6; }
+.topbar { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#0b1b25; }
+.brand{ font-weight:700; }
+.container { display:flex; flex-direction:column; gap:12px; padding:12px; }
+.card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:10px; border-radius:12px; box-shadow: 0 4px 18px rgba(0,0,0,0.4); }
+.left, .right { width:100%; }
+.signal-card { padding:8px; border-radius:8px; margin-bottom:8px; background:rgba(255,255,255,0.02); display:block; }
+.signal-top { display:flex; justify-content:space-between; align-items:center; }
+.pill { padding:4px 8px; border-radius:999px; font-size:12px; color:#fff; }
+.pill.buy { background:#0ea5a4; }
+.pill.sell { background:#ef4444; }
+.btn { padding:6px 10px; border-radius:8px; background:#1f6feb; color:#fff; border:none; }
+.small { padding:4px 8px; font-size:14px; }
+.muted { color:#8aa0b2; font-size:13px; }
+.error { color:#ffb3b3; }
+.chart-controls { display:flex; gap:8px; margin-top:8px; align-items:center; }
+input, select { padding:8px; border-radius:8px; border:1px solid #123; background:#08131a; color:#dbeafe; }
+@media(min-width:900px) {
+  .container { flex-direction:row; }
+  .left { width:32%; }
+  .right { width:68%; }
 }
