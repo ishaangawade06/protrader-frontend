@@ -9,11 +9,11 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Signup
+// Auth Functions
 function signup() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -22,7 +22,6 @@ function signup() {
     .catch(err => alert("❌ " + err.message));
 }
 
-// Login
 function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -31,29 +30,37 @@ function login() {
     .catch(err => alert("❌ " + err.message));
 }
 
-// Logout
 function logout() {
   auth.signOut();
 }
 
-// Auth State Listener
+// Switch UI on login/logout
 auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById("auth-screen").style.display = "none";
     document.getElementById("home-screen").style.display = "block";
-
-    // Load trading signals from Firestore
-    db.collection("signals").onSnapshot(snapshot => {
-      const signalList = document.getElementById("signal-list");
-      signalList.innerHTML = "";
-      snapshot.forEach(doc => {
-        const li = document.createElement("li");
-        li.textContent = doc.data().text;
-        signalList.appendChild(li);
-      });
-    });
+    fetchSignals();
   } else {
     document.getElementById("auth-screen").style.display = "block";
     document.getElementById("home-screen").style.display = "none";
   }
 });
+
+// Fetch trading signals from backend API
+async function fetchSignals() {
+  try {
+    const res = await fetch("https://your-backend-url.com/api/signals"); 
+    const data = await res.json();
+
+    const signalsList = document.getElementById("signals");
+    signalsList.innerHTML = "";
+
+    data.forEach(signal => {
+      const li = document.createElement("li");
+      li.innerText = `${signal.asset} → ${signal.direction} @ ${signal.entry}`;
+      signalsList.appendChild(li);
+    });
+  } catch (err) {
+    console.error("Error fetching signals:", err);
+  }
+      }
