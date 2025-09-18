@@ -4,35 +4,157 @@
   <meta charset="UTF-8">
   <title>ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: #0d0d0d;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .logo {
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0px 0px 20px rgba(0, 255, 100, 0.3);
+      width: 90%;
+      max-width: 350px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button.signup {
+      background: #00cc44;
+      color: white;
+    }
+
+    button.signup:hover {
+      background: #00e65c;
+    }
+
+    button.login {
+      background: #e60000;
+      color: white;
+    }
+
+    button.login:hover {
+      background: #ff1a1a;
+    }
+
+    button.logout {
+      background: #333;
+      color: white;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
-  <!-- Auth Screen -->
-  <div id="auth-screen" class="screen">
-    <h2>🔒 ProTraderHack Login</h2>
-    <input id="email" type="email" placeholder="Email"><br>
-    <input id="password" type="password" placeholder="Password"><br>
-    <button onclick="signup()">Sign Up</button>
-    <button onclick="login()">Login</button>
+  <!-- Logo -->
+  <div class="logo">
+    <img src="logo.png" alt="ProTraderHack Logo" width="120">
+  </div>
+
+  <!-- Login/Signup Screen -->
+  <div id="auth-screen" class="card">
+    <h2>🔒 Login to ProTraderHack</h2>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button class="signup" onclick="signup()">Sign Up</button>
+    <button class="login" onclick="login()">Login</button>
   </div>
 
   <!-- Home Screen -->
-  <div id="home-screen" class="screen" style="display:none;">
-    <h2>📊 ProTraderHack Dashboard</h2>
-    <button onclick="logout()">Logout</button>
-
-    <div id="signal-section">
-      <h3>🔥 Live Trading Signals</h3>
-      <ul id="signals"></ul>
-    </div>
+  <div id="home-screen" class="card" style="display:none;">
+    <h2>✅ Welcome to ProTraderHack</h2>
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
 
-  <!-- Custom App Script -->
-  <script src="app.js"></script>
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+      authDomain: "protraderhack-d67f0.firebaseapp.com",
+      projectId: "protraderhack-d67f0",
+      storageBucket: "protraderhack-d67f0.firebasestorage.app",
+      messagingSenderId: "1062485216321",
+      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Signup function
+    function signup() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => alert("✅ Account created!"))
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    // Login function
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => alert("✅ Logged in!"))
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    // Logout
+    function logout() {
+      auth.signOut();
+    }
+
+    // Detect auth state
+    auth.onAuthStateChanged(user => {
+      document.getElementById("auth-screen").style.display = user ? "none" : "block";
+      document.getElementById("home-screen").style.display = user ? "block" : "none";
+    });
+  </script>
 </body>
-</html>
+  </html>
