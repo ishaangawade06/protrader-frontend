@@ -5,9 +5,6 @@
   <title>ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
@@ -16,99 +13,55 @@
   <style>
     body {
       margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-color: #0d0d0d;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #111;
       color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
       text-align: center;
     }
-
-    .logo {
-      margin-bottom: 20px;
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
-
-    .card {
-      background: #1a1a1a;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0px 0px 20px rgba(0, 255, 100, 0.3);
-      width: 90%;
-      max-width: 350px;
-    }
-
-    input {
+    video {
       width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
+      height: 100%;
+      object-fit: cover;
     }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 16px;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button.signup {
-      background: #00cc44;
-      color: white;
-    }
-
-    button.signup:hover {
-      background: #00e65c;
-    }
-
-    button.login {
-      background: #e60000;
-      color: white;
-    }
-
-    button.login:hover {
-      background: #ff1a1a;
-    }
-
-    button.logout {
-      background: #333;
-      color: white;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-      font-weight: 700;
+    #auth-screen, #home-screen {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <!-- Logo -->
-  <div class="logo">
-    <img src="logo.png" alt="ProTraderHack Logo" width="120">
+
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <video autoplay muted playsinline id="introVideo">
+      <source src="VID-20250904-WA0075.mp4" type="video/mp4">
+      Your browser does not support video.
+    </video>
   </div>
 
   <!-- Login/Signup Screen -->
-  <div id="auth-screen" class="card">
-    <h2>🔒 Login to ProTraderHack</h2>
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <button class="signup" onclick="signup()">Sign Up</button>
-    <button class="login" onclick="login()">Login</button>
+  <div id="auth-screen">
+    <h2>🔒 ProTraderHack Login</h2>
+    <input id="email" type="email" placeholder="Email"><br><br>
+    <input id="password" type="password" placeholder="Password"><br><br>
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Login</button>
   </div>
 
   <!-- Home Screen -->
-  <div id="home-screen" class="card" style="display:none;">
+  <div id="home-screen">
     <h2>✅ Welcome to ProTraderHack</h2>
-    <button class="logout" onclick="logout()">Logout</button>
+    <button onclick="logout()">Logout</button>
   </div>
 
   <script>
@@ -122,12 +75,18 @@
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
 
-    // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Signup function
+    // Hide video after it finishes
+    const video = document.getElementById("introVideo");
+    video.onended = () => {
+      document.getElementById("loading-screen").style.display = "none";
+      document.getElementById("auth-screen").style.display = "block";
+    };
+
+    // Signup
     function signup() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -136,7 +95,7 @@
         .catch(err => alert("❌ " + err.message));
     }
 
-    // Login function
+    // Login
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -152,9 +111,14 @@
 
     // Detect auth state
     auth.onAuthStateChanged(user => {
-      document.getElementById("auth-screen").style.display = user ? "none" : "block";
-      document.getElementById("home-screen").style.display = user ? "block" : "none";
+      if (user) {
+        document.getElementById("auth-screen").style.display = "none";
+        document.getElementById("home-screen").style.display = "block";
+      } else {
+        document.getElementById("auth-screen").style.display = "block";
+        document.getElementById("home-screen").style.display = "none";
+      }
     });
   </script>
 </body>
-  </html>
+</html>
