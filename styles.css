@@ -1,66 +1,51 @@
-// Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
-  authDomain: "protraderhack-d67f0.firebaseapp.com",
-  projectId: "protraderhack-d67f0",
-  storageBucket: "protraderhack-d67f0.firebasestorage.app",
-  messagingSenderId: "1062485216321",
-  appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
-};
-
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// Auth Functions
-function signup() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(() => alert("✅ Account created!"))
-    .catch(err => alert("❌ " + err.message));
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
 }
 
-function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  auth.signInWithEmailAndPassword(email, password)
-    .then(() => alert("✅ Logged in!"))
-    .catch(err => alert("❌ " + err.message));
+.screen {
+  margin-top: 50px;
 }
 
-function logout() {
-  auth.signOut();
+input {
+  padding: 10px;
+  margin: 5px;
+  width: 80%;
+  border: none;
+  border-radius: 8px;
 }
 
-// Switch UI on login/logout
-auth.onAuthStateChanged(user => {
-  if (user) {
-    document.getElementById("auth-screen").style.display = "none";
-    document.getElementById("home-screen").style.display = "block";
-    fetchSignals();
-  } else {
-    document.getElementById("auth-screen").style.display = "block";
-    document.getElementById("home-screen").style.display = "none";
-  }
-});
+button {
+  background: #1e40af;
+  color: white;
+  padding: 10px 15px;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-// Fetch trading signals from backend API
-async function fetchSignals() {
-  try {
-    const res = await fetch("https://your-backend-url.com/api/signals"); 
-    const data = await res.json();
+button:hover {
+  background: #2563eb;
+}
 
-    const signalsList = document.getElementById("signals");
-    signalsList.innerHTML = "";
+#signal-section {
+  margin-top: 30px;
+  text-align: left;
+}
 
-    data.forEach(signal => {
-      const li = document.createElement("li");
-      li.innerText = `${signal.asset} → ${signal.direction} @ ${signal.entry}`;
-      signalsList.appendChild(li);
-    });
-  } catch (err) {
-    console.error("Error fetching signals:", err);
-  }
+#signals {
+  list-style: none;
+  padding: 0;
+}
+
+#signals li {
+  background: #1e293b;
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 8px;
 }
