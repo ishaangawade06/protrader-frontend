@@ -9,40 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-      text-align: center;
-      padding: 50px;
-    }
-    input {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 5px;
-      border: none;
-      width: 80%;
-      max-width: 300px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 5px;
-      border: none;
-      border-radius: 5px;
-      background: #3b82f6;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #2563eb;
-    }
-    #home-screen {
-      margin-top: 30px;
-    }
-  </style>
 </head>
 <body>
   <!-- Login/Signup Screen -->
@@ -56,14 +22,14 @@
 
   <!-- Home Screen -->
   <div id="home-screen" style="display:none;">
-    <h2>📊 Trading Signals Dashboard</h2>
+    <h2>📈 Live Trading Signals</h2>
     <div id="signals"></div>
     <br>
     <button onclick="logout()">Logout</button>
   </div>
 
   <script>
-    // Firebase Config (same as before)
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
@@ -73,33 +39,25 @@
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
 
+    // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Replace this with your backend URL (FastAPI)
-    const API_BASE = "https://protraderhack.onrender.com";
-
-    // Signup
+    // Signup function
     function signup() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       auth.createUserWithEmailAndPassword(email, password)
-        .then(user => {
-          alert("✅ Account created!");
-        })
+        .then(() => alert("✅ Account created!"))
         .catch(err => alert("❌ " + err.message));
     }
 
-    // Login
+    // Login function
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       auth.signInWithEmailAndPassword(email, password)
-        .then(user => {
-          alert("✅ Logged in!");
-          loadSignals();
-        })
         .catch(err => alert("❌ " + err.message));
     }
 
@@ -108,38 +66,28 @@
       auth.signOut();
     }
 
-    // Detect auth state
+    // Auth state change
     auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("home-screen").style.display = "block";
-        loadSignals();
+
+        // Subscribe to real-time trading signals
+        db.collection("signals").orderBy("time", "desc").limit(10)
+          .onSnapshot(snapshot => {
+            let html = "";
+            snapshot.forEach(doc => {
+              const s = doc.data();
+              html += `<p>💹 <b>${s.asset}</b>: ${s.signal} at ${s.price} (⏰ ${s.time})</p>`;
+            });
+            document.getElementById("signals").innerHTML = html;
+          });
+
       } else {
         document.getElementById("auth-screen").style.display = "block";
         document.getElementById("home-screen").style.display = "none";
       }
     });
-
-    // Load trading signals from backend
-    async function loadSignals() {
-      try {
-        let res = await fetch(`${API_BASE}/signals`);
-        let data = await res.json();
-        let html = "";
-        data.forEach(sig => {
-          html += `
-            <div style="border:1px solid #ddd; padding:10px; margin:10px;">
-              <strong>${sig.symbol}</strong> - ${sig.signal} <br>
-              📈 Entry: ${sig.entry} | 🎯 Target: ${sig.target} | 🛑 Stop: ${sig.stoploss}
-            </div>
-          `;
-        });
-        document.getElementById("signals").innerHTML = html;
-      } catch (e) {
-        console.error(e);
-        document.getElementById("signals").innerHTML = "⚠️ Failed to load signals.";
-      }
-    }
   </script>
 </body>
 </html>
