@@ -6,65 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
-    #auth-screen {
-      padding: 20px;
-      position: relative;
-      height: 100vh;
-    }
-    #skip-btn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #home-screen {
-      padding: 20px;
-    }
-    #backend-status {
-      margin-top: 15px;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <!-- Login/Signup Screen -->
-  <div id="auth-screen">
-    <h2>🔒 ProTraderHack Login</h2>
-    <input id="email" type="email" placeholder="Email"><br><br>
-    <input id="password" type="password" placeholder="Password"><br><br>
-    <button onclick="signup()">Sign Up</button>
-    <button onclick="login()">Login</button>
-
-    <!-- Skip Button -->
-    <button id="skip-btn" onclick="skipLogin()">Skip</button>
-  </div>
-
-  <!-- Home Screen -->
-  <div id="home-screen" style="display:none;">
-    <h2>✅ Welcome to ProTraderHack</h2>
-    <button onclick="logout()">Logout</button>
-    <br><br>
-    <button onclick="checkBackend()">Check Backend</button>
-    <p id="backend-status"></p>
-  </div>
-
-  <script>
     // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
@@ -75,53 +20,53 @@
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-    // Backend URL
     const BACKEND_URL = "https://protrader-backend-sbus.onrender.com";
 
     // Signup
-    function signup() {
+    window.signup = function() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(email, password)
+      createUserWithEmailAndPassword(auth, email, password)
         .then(() => alert("✅ Account created!"))
         .catch(err => alert("❌ " + err.message));
-    }
+    };
 
     // Login
-    function login() {
+    window.login = function() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, password)
+      signInWithEmailAndPassword(auth, email, password)
         .then(() => alert("✅ Logged in!"))
         .catch(err => alert("❌ " + err.message));
-    }
+    };
 
     // Logout
-    function logout() {
-      auth.signOut();
-    }
+    window.logout = function() {
+      signOut(auth);
+    };
 
     // Skip Login
-    function skipLogin() {
+    window.skipLogin = function() {
       document.getElementById("auth-screen").style.display = "none";
       document.getElementById("home-screen").style.display = "block";
-    }
+    };
 
     // Detect auth state
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, user => {
       if (user) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("home-screen").style.display = "block";
+      } else {
+        document.getElementById("auth-screen").style.display = "block";
+        document.getElementById("home-screen").style.display = "none";
       }
     });
 
     // Check backend connection
-    async function checkBackend() {
+    window.checkBackend = async function() {
       try {
         const res = await fetch(`${BACKEND_URL}/ping`);
         const data = await res.json();
@@ -129,7 +74,73 @@
       } catch (err) {
         document.getElementById("backend-status").innerText = "❌ Backend not reachable";
       }
-    }
+    };
   </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f6fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 350px;
+      text-align: center;
+    }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #backend-status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login/Signup Screen -->
+  <div id="auth-screen" class="card">
+    <h2>🔒 ProTraderHack Login</h2>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <div>
+      <button onclick="signup()">Sign Up</button>
+      <button onclick="login()">Login</button>
+    </div>
+    <button onclick="skipLogin()">Skip</button>
+  </div>
+
+  <!-- Home Screen -->
+  <div id="home-screen" class="card" style="display:none;">
+    <h2>✅ Welcome to ProTraderHack</h2>
+    <button onclick="logout()">Logout</button>
+    <button onclick="checkBackend()">Check Backend</button>
+    <p id="backend-status"></p>
+  </div>
 </body>
-</html>
+      </html>
