@@ -5,6 +5,9 @@
   <title>ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Lightweight Charts -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
@@ -24,9 +27,15 @@
     const auth = getAuth(app);
 
     const BACKEND_URL = "https://protrader-backend-sbus.onrender.com";
+    const TIMESFRAMES_URL = "https://protrader-timesframes.onrender.com";
 
-    // Signup
-    window.signup = function() {
+    let chart, candleSeries;
+    let currentSymbol = "BTC/USDT";
+    let currentInterval = "1h";
+    let refreshIntervalId;
+
+    // Auth
+    window.signup = () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       createUserWithEmailAndPassword(auth, email, password)
@@ -34,8 +43,7 @@
         .catch(err => alert("❌ " + err.message));
     };
 
-    // Login
-    window.login = function() {
+    window.login = () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       signInWithEmailAndPassword(auth, email, password)
@@ -43,30 +51,31 @@
         .catch(err => alert("❌ " + err.message));
     };
 
-    // Logout
-    window.logout = function() {
+    window.logout = () => {
       signOut(auth);
+      clearInterval(refreshIntervalId);
     };
 
-    // Skip Login
-    window.skipLogin = function() {
+    window.skipLogin = () => {
       document.getElementById("auth-screen").style.display = "none";
       document.getElementById("home-screen").style.display = "block";
+      startChart(currentSymbol, currentInterval);
     };
 
-    // Detect auth state
     onAuthStateChanged(auth, user => {
       if (user) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("home-screen").style.display = "block";
+        startChart(currentSymbol, currentInterval);
       } else {
         document.getElementById("auth-screen").style.display = "block";
         document.getElementById("home-screen").style.display = "none";
+        clearInterval(refreshIntervalId);
       }
     });
 
-    // Check backend connection
-    window.checkBackend = async function() {
+    // Backend check
+    window.checkBackend = async () => {
       try {
         const res = await fetch(`${BACKEND_URL}/ping`);
         const data = await res.json();
@@ -74,6 +83,50 @@
       } catch (err) {
         document.getElementById("backend-status").innerText = "❌ Backend not reachable";
       }
+    };
+
+    // Chart loading
+    async function loadChart(symbol, interval) {
+      try {
+        const res = await fetch(`${TIMESFRAMES_URL}/candles?symbol=${symbol}&interval=${interval}&limit=100`);
+        const json = await res.json();
+        const candles = json.data;
+
+        if (!chart) {
+          chart = LightweightCharts.createChart(document.getElementById("chart"), {
+            width: document.getElementById("chart").offsetWidth,
+            height: 400,
+          });
+          candleSeries = chart.addCandlestickSeries();
+        }
+        candleSeries.setData(candles);
+        document.getElementById("backend-status").innerText = `✅ Showing ${symbol} (${interval})`;
+      } catch (err) {
+        document.getElementById("backend-status").innerText = "❌ Chart load failed";
+      }
+    }
+
+    // Start chart with auto-refresh
+    function startChart(symbol, interval) {
+      currentSymbol = symbol;
+      currentInterval = interval;
+      loadChart(symbol, interval);
+
+      if (refreshIntervalId) clearInterval(refreshIntervalId);
+      refreshIntervalId = setInterval(() => {
+        loadChart(currentSymbol, currentInterval);
+      }, 60 * 1000); // refresh every 1 min
+    }
+
+    // Change symbol
+    window.changeSymbol = () => {
+      const symbol = document.getElementById("symbol-select").value;
+      startChart(symbol, currentInterval);
+    };
+
+    // Change interval
+    window.changeInterval = interval => {
+      startChart(currentSymbol, interval);
     };
   </script>
 
@@ -93,11 +146,11 @@
       padding: 25px;
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      width: 90%;
-      max-width: 350px;
+      width: 95%;
+      max-width: 420px;
       text-align: center;
     }
-    input {
+    input, select {
       width: 90%;
       padding: 10px;
       margin: 8px 0;
@@ -120,6 +173,19 @@
       margin-top: 10px;
       font-weight: bold;
     }
+    #chart {
+      margin-top: 20px;
+    }
+    .timeframe-btns, .symbol-select {
+      margin-top: 10px;
+    }
+    .timeframe-btns button {
+      background: #28a745;
+      margin: 3px;
+    }
+    .timeframe-btns button:hover {
+      background: #1c7c31;
+    }
   </style>
 </head>
 <body>
@@ -141,6 +207,28 @@
     <button onclick="logout()">Logout</button>
     <button onclick="checkBackend()">Check Backend</button>
     <p id="backend-status"></p>
+
+    <h3>📊 Candlestick Chart</h3>
+
+    <!-- Symbol Selection -->
+    <div class="symbol-select">
+      <select id="symbol-select" onchange="changeSymbol()">
+        <option value="BTC/USDT">BTC/USDT</option>
+        <option value="ETH/USDT">ETH/USDT</option>
+        <option value="SOL/USDT">SOL/USDT</option>
+      </select>
+    </div>
+
+    <!-- Timeframe Selection -->
+    <div class="timeframe-btns">
+      <button onclick="changeInterval('1m')">1m</button>
+      <button onclick="changeInterval('5m')">5m</button>
+      <button onclick="changeInterval('1h')">1h</button>
+      <button onclick="changeInterval('1d')">1d</button>
+    </div>
+
+    <!-- Chart -->
+    <div id="chart" style="height:400px;"></div>
   </div>
 </body>
-      </html>
+  </html>
