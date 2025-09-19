@@ -186,6 +186,9 @@
     .timeframe-btns button:hover {
       background: #1c7c31;
     }
+    .tradingview-widget-container {
+      margin-top: 25px;
+    }
   </style>
 </head>
 <body>
@@ -208,7 +211,7 @@
     <button onclick="checkBackend()">Check Backend</button>
     <p id="backend-status"></p>
 
-    <h3>📊 Candlestick Chart</h3>
+    <h3>📊 Custom Candlestick Chart</h3>
 
     <!-- Symbol Selection -->
     <div class="symbol-select">
@@ -227,8 +230,32 @@
       <button onclick="changeInterval('1d')">1d</button>
     </div>
 
-    <!-- Chart -->
+    <!-- Custom Chart -->
     <div id="chart" style="height:400px;"></div>
+
+    <h3>📈 TradingView Chart</h3>
+    <!-- TradingView Widget -->
+    <div class="tradingview-widget-container">
+      <div id="tradingview_chart"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script type="text/javascript">
+        new TradingView.widget({
+          "width": "100%",
+          "height": 400,
+          "symbol": "BINANCE:BTCUSDT",
+          "interval": "60",
+          "timezone": "Etc/UTC",
+          "theme": "light",
+          "style": "1",
+          "locale": "en",
+          "toolbar_bg": "#f1f3f6",
+          "enable_publishing": false,
+          "hide_side_toolbar": false,
+          "allow_symbol_change": true,
+          "container_id": "tradingview_chart"
+        });
+      </script>
+    </div>
   </div>
 </body>
-  </html>
+</html>
