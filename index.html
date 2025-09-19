@@ -11,7 +11,14 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { 
+      getAuth, onAuthStateChanged, 
+      createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut 
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    import { 
+      getFirestore, collection, query, orderBy, onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     // Firebase Config
     const firebaseConfig = {
@@ -25,6 +32,7 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     const BACKEND_URL = "https://protrader-backend-sbus.onrender.com";
     const TIMESFRAMES_URL = "https://protrader-timesframes.onrender.com";
@@ -34,7 +42,7 @@
     let currentInterval = "1h";
     let refreshIntervalId;
 
-    // Auth
+    // Signup
     window.signup = () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -43,6 +51,7 @@
         .catch(err => alert("❌ " + err.message));
     };
 
+    // Login
     window.login = () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -51,22 +60,27 @@
         .catch(err => alert("❌ " + err.message));
     };
 
+    // Logout
     window.logout = () => {
       signOut(auth);
       clearInterval(refreshIntervalId);
     };
 
+    // Skip Login
     window.skipLogin = () => {
       document.getElementById("auth-screen").style.display = "none";
       document.getElementById("home-screen").style.display = "block";
       startChart(currentSymbol, currentInterval);
+      listenSignals();
     };
 
+    // Detect Auth
     onAuthStateChanged(auth, user => {
       if (user) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("home-screen").style.display = "block";
         startChart(currentSymbol, currentInterval);
+        listenSignals();
       } else {
         document.getElementById("auth-screen").style.display = "block";
         document.getElementById("home-screen").style.display = "none";
@@ -128,6 +142,29 @@
     window.changeInterval = interval => {
       startChart(currentSymbol, interval);
     };
+
+    // 🔴 Live Trading Signals Listener
+    function listenSignals() {
+      const signalsRef = collection(db, "signals");
+      const q = query(signalsRef, orderBy("time", "desc"));
+
+      onSnapshot(q, (snapshot) => {
+        const signalsDiv = document.getElementById("signals");
+        signalsDiv.innerHTML = "";
+        snapshot.forEach((doc) => {
+          const s = doc.data();
+          const signalCard = `
+            <div style="border:1px solid #ccc; border-radius:8px; padding:10px; margin:5px; text-align:left;">
+              <strong>${s.symbol}</strong> — 
+              <span style="color:${s.type === 'BUY' ? 'green' : 'red'}">${s.type}</span><br>
+              Price: ${s.price}<br>
+              Time: ${new Date(s.time).toLocaleString()}
+            </div>
+          `;
+          signalsDiv.innerHTML += signalCard;
+        });
+      });
+    }
   </script>
 
   <style>
@@ -212,7 +249,6 @@
     <p id="backend-status"></p>
 
     <h3>📊 Custom Candlestick Chart</h3>
-
     <!-- Symbol Selection -->
     <div class="symbol-select">
       <select id="symbol-select" onchange="changeSymbol()">
@@ -221,7 +257,6 @@
         <option value="SOL/USDT">SOL/USDT</option>
       </select>
     </div>
-
     <!-- Timeframe Selection -->
     <div class="timeframe-btns">
       <button onclick="changeInterval('1m')">1m</button>
@@ -229,7 +264,6 @@
       <button onclick="changeInterval('1h')">1h</button>
       <button onclick="changeInterval('1d')">1d</button>
     </div>
-
     <!-- Custom Chart -->
     <div id="chart" style="height:400px;"></div>
 
@@ -256,6 +290,9 @@
         });
       </script>
     </div>
+
+    <h3>📢 Live Trading Signals</h3>
+    <div id="signals"></div>
   </div>
 </body>
 </html>
