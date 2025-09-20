@@ -5,21 +5,45 @@
   <title>ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Lightweight Charts -->
-  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-
   <!-- Firebase SDKs -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { 
-      getAuth, onAuthStateChanged, 
-      createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut 
-    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 
-    import { 
-      getFirestore, collection, query, orderBy, onSnapshot 
-    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#0b1220; color:#e6eef8; }
+    .container { padding:20px; text-align:center; }
+    input, button { padding:10px; margin:5px; border-radius:8px; border:none; }
+    input { width:80%; }
+    button { cursor:pointer; }
+    #signalsList { margin-top:20px; text-align:left; }
+    .signal { background:#111a2e; padding:12px; margin-bottom:10px; border-radius:8px; }
+    .buy { border-left:5px solid #22c55e; }
+    .sell { border-left:5px solid #ef4444; }
+    .hold { border-left:5px solid #64748b; }
+  </style>
+</head>
+<body>
+  <!-- Login/Signup -->
+  <div id="auth-screen" class="container">
+    <h2>🔒 ProTraderHack Login</h2>
+    <input id="email" type="email" placeholder="Email"><br>
+    <input id="password" type="password" placeholder="Password"><br>
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Login</button>
+    <button onclick="skipLogin()">Skip</button>
+  </div>
 
+  <!-- Home -->
+  <div id="home-screen" class="container" style="display:none;">
+    <h2>✅ Welcome to ProTraderHack</h2>
+    <button onclick="logout()">Logout</button>
+
+    <h3 style="margin-top:20px;">📢 Live Trading Signals</h3>
+    <div id="signalsList"></div>
+  </div>
+
+  <script>
     // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
@@ -29,270 +53,59 @@
       messagingSenderId: "1062485216321",
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    const BACKEND_URL = "https://protrader-backend-sbus.onrender.com";
-    const TIMESFRAMES_URL = "https://protrader-timesframes.onrender.com";
-
-    let chart, candleSeries;
-    let currentSymbol = "BTC/USDT";
-    let currentInterval = "1h";
-    let refreshIntervalId;
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
     // Signup
-    window.signup = () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      createUserWithEmailAndPassword(auth, email, password)
-        .then(() => alert("✅ Account created!"))
-        .catch(err => alert("❌ " + err.message));
-    };
-
+    function signup(){
+      const e=document.getElementById("email").value;
+      const p=document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(e,p).catch(err=>alert(err.message));
+    }
     // Login
-    window.login = () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => alert("✅ Logged in!"))
-        .catch(err => alert("❌ " + err.message));
-    };
-
+    function login(){
+      const e=document.getElementById("email").value;
+      const p=document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message));
+    }
     // Logout
-    window.logout = () => {
-      signOut(auth);
-      clearInterval(refreshIntervalId);
-    };
+    function logout(){ auth.signOut(); }
+    // Skip login
+    function skipLogin(){
+      document.getElementById("auth-screen").style.display="none";
+      document.getElementById("home-screen").style.display="block";
+      loadSignals();
+    }
 
-    // Skip Login
-    window.skipLogin = () => {
-      document.getElementById("auth-screen").style.display = "none";
-      document.getElementById("home-screen").style.display = "block";
-      startChart(currentSymbol, currentInterval);
-      listenSignals();
-    };
-
-    // Detect Auth
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        document.getElementById("auth-screen").style.display = "none";
-        document.getElementById("home-screen").style.display = "block";
-        startChart(currentSymbol, currentInterval);
-        listenSignals();
+    // Auth state
+    auth.onAuthStateChanged(user=>{
+      if(user){
+        document.getElementById("auth-screen").style.display="none";
+        document.getElementById("home-screen").style.display="block";
+        loadSignals();
       } else {
-        document.getElementById("auth-screen").style.display = "block";
-        document.getElementById("home-screen").style.display = "none";
-        clearInterval(refreshIntervalId);
+        document.getElementById("auth-screen").style.display="block";
+        document.getElementById("home-screen").style.display="none";
       }
     });
 
-    // Backend check
-    window.checkBackend = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/ping`);
-        const data = await res.json();
-        document.getElementById("backend-status").innerText = "✅ " + data.message;
-      } catch (err) {
-        document.getElementById("backend-status").innerText = "❌ Backend not reachable";
-      }
-    };
-
-    // Chart loading
-    async function loadChart(symbol, interval) {
-      try {
-        const res = await fetch(`${TIMESFRAMES_URL}/candles?symbol=${symbol}&interval=${interval}&limit=100`);
-        const json = await res.json();
-        const candles = json.data;
-
-        if (!chart) {
-          chart = LightweightCharts.createChart(document.getElementById("chart"), {
-            width: document.getElementById("chart").offsetWidth,
-            height: 400,
-          });
-          candleSeries = chart.addCandlestickSeries();
-        }
-        candleSeries.setData(candles);
-        document.getElementById("backend-status").innerText = `✅ Showing ${symbol} (${interval})`;
-      } catch (err) {
-        document.getElementById("backend-status").innerText = "❌ Chart load failed";
-      }
-    }
-
-    // Start chart with auto-refresh
-    function startChart(symbol, interval) {
-      currentSymbol = symbol;
-      currentInterval = interval;
-      loadChart(symbol, interval);
-
-      if (refreshIntervalId) clearInterval(refreshIntervalId);
-      refreshIntervalId = setInterval(() => {
-        loadChart(currentSymbol, currentInterval);
-      }, 60 * 1000); // refresh every 1 min
-    }
-
-    // Change symbol
-    window.changeSymbol = () => {
-      const symbol = document.getElementById("symbol-select").value;
-      startChart(symbol, currentInterval);
-    };
-
-    // Change interval
-    window.changeInterval = interval => {
-      startChart(currentSymbol, interval);
-    };
-
-    // 🔴 Live Trading Signals Listener
-    function listenSignals() {
-      const signalsRef = collection(db, "signals");
-      const q = query(signalsRef, orderBy("time", "desc"));
-
-      onSnapshot(q, (snapshot) => {
-        const signalsDiv = document.getElementById("signals");
-        signalsDiv.innerHTML = "";
-        snapshot.forEach((doc) => {
-          const s = doc.data();
-          const signalCard = `
-            <div style="border:1px solid #ccc; border-radius:8px; padding:10px; margin:5px; text-align:left;">
-              <strong>${s.symbol}</strong> — 
-              <span style="color:${s.type === 'BUY' ? 'green' : 'red'}">${s.type}</span><br>
-              Price: ${s.price}<br>
-              Time: ${new Date(s.time).toLocaleString()}
-            </div>
-          `;
-          signalsDiv.innerHTML += signalCard;
+    // Load live signals
+    function loadSignals(){
+      const list=document.getElementById("signalsList");
+      db.collection("signals").orderBy("time","desc").limit(20).onSnapshot(snap=>{
+        list.innerHTML="";
+        snap.forEach(doc=>{
+          const s=doc.data();
+          const cls=s.type==="BUY"?"buy":s.type==="SELL"?"sell":"hold";
+          list.innerHTML+=`
+            <div class="signal ${cls}">
+              <strong>${s.symbol}</strong> → ${s.type} @ ${s.price}
+              <div style="font-size:12px;opacity:0.8;">${new Date(s.time).toLocaleString()}</div>
+            </div>`;
         });
       });
     }
   </script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f6fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .card {
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      width: 95%;
-      max-width: 420px;
-      text-align: center;
-    }
-    input, select {
-      width: 90%;
-      padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 6px;
-      margin: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    #backend-status {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    #chart {
-      margin-top: 20px;
-    }
-    .timeframe-btns, .symbol-select {
-      margin-top: 10px;
-    }
-    .timeframe-btns button {
-      background: #28a745;
-      margin: 3px;
-    }
-    .timeframe-btns button:hover {
-      background: #1c7c31;
-    }
-    .tradingview-widget-container {
-      margin-top: 25px;
-    }
-  </style>
-</head>
-<body>
-  <!-- Login/Signup Screen -->
-  <div id="auth-screen" class="card">
-    <h2>🔒 ProTraderHack Login</h2>
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <div>
-      <button onclick="signup()">Sign Up</button>
-      <button onclick="login()">Login</button>
-    </div>
-    <button onclick="skipLogin()">Skip</button>
-  </div>
-
-  <!-- Home Screen -->
-  <div id="home-screen" class="card" style="display:none;">
-    <h2>✅ Welcome to ProTraderHack</h2>
-    <button onclick="logout()">Logout</button>
-    <button onclick="checkBackend()">Check Backend</button>
-    <p id="backend-status"></p>
-
-    <h3>📊 Custom Candlestick Chart</h3>
-    <!-- Symbol Selection -->
-    <div class="symbol-select">
-      <select id="symbol-select" onchange="changeSymbol()">
-        <option value="BTC/USDT">BTC/USDT</option>
-        <option value="ETH/USDT">ETH/USDT</option>
-        <option value="SOL/USDT">SOL/USDT</option>
-      </select>
-    </div>
-    <!-- Timeframe Selection -->
-    <div class="timeframe-btns">
-      <button onclick="changeInterval('1m')">1m</button>
-      <button onclick="changeInterval('5m')">5m</button>
-      <button onclick="changeInterval('1h')">1h</button>
-      <button onclick="changeInterval('1d')">1d</button>
-    </div>
-    <!-- Custom Chart -->
-    <div id="chart" style="height:400px;"></div>
-
-    <h3>📈 TradingView Chart</h3>
-    <!-- TradingView Widget -->
-    <div class="tradingview-widget-container">
-      <div id="tradingview_chart"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-      <script type="text/javascript">
-        new TradingView.widget({
-          "width": "100%",
-          "height": 400,
-          "symbol": "BINANCE:BTCUSDT",
-          "interval": "60",
-          "timezone": "Etc/UTC",
-          "theme": "light",
-          "style": "1",
-          "locale": "en",
-          "toolbar_bg": "#f1f3f6",
-          "enable_publishing": false,
-          "hide_side_toolbar": false,
-          "allow_symbol_change": true,
-          "container_id": "tradingview_chart"
-        });
-      </script>
-    </div>
-
-    <h3>📢 Live Trading Signals</h3>
-    <div id="signals"></div>
-  </div>
 </body>
 </html>
