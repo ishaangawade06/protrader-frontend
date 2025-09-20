@@ -64,6 +64,13 @@
   <div id="home-screen" class="container hidden">
     <h2>✅ Welcome to ProTraderHack</h2>
     <div id="signalsList"></div>
+
+    <h3 style="margin-top:20px;">⚡ Quick Trade</h3>
+    <input id="tradeSymbol" placeholder="Symbol (BTC/USDT)">
+    <input id="tradeAmount" placeholder="Amount (e.g. 0.001)">
+    <button onclick="buy()">Buy</button>
+    <button onclick="sell()">Sell</button>
+    <p id="tradeResult"></p>
   </div>
 
   <!-- Search Screen -->
@@ -84,7 +91,16 @@
   <div id="account-screen" class="container hidden">
     <h2>👤 My Account</h2>
     <p id="account-info"></p>
-    <button onclick="logout()">Logout</button>
+
+    <h3 style="margin-top:20px;">🔑 Connect Broker (Binance)</h3>
+    <input id="apiKey" placeholder="API Key">
+    <input id="secretKey" placeholder="Secret Key">
+    <button onclick="saveBrokerKeys()">Save Keys</button>
+    <button onclick="fetchBalance()">Check Balance</button>
+
+    <p id="balanceInfo" style="margin-top:15px; font-weight:bold;"></p>
+
+    <button style="margin-top:20px;" onclick="logout()">Logout</button>
   </div>
 
   <!-- Bottom Navigation -->
@@ -96,6 +112,8 @@
   </div>
 
   <script>
+    const backendURL="https://protrader-backend-sbus.onrender.com";
+
     // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
@@ -106,8 +124,8 @@
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    const auth=firebase.auth();
+    const db=firebase.firestore();
 
     // Intro skip
     const introVideo=document.getElementById("introVideo");
@@ -118,11 +136,9 @@
     }
 
     // Username validation
-    function validateUsername(name){
-      return /^[a-z0-9]{1,12}$/.test(name);
-    }
+    function validateUsername(name){ return /^[a-z0-9]{1,12}$/.test(name); }
 
-    // Signup with username check
+    // Signup
     async function signup(){
       const uname=document.getElementById("username").value.trim();
       const email=document.getElementById("email").value.trim();
@@ -130,24 +146,24 @@
       if(!validateUsername(uname)){ alert("❌ Invalid username"); return; }
       const q=await db.collection("users").where("username","==",uname).get();
       if(!q.empty){ alert("❌ Username already taken"); return; }
-      try {
+      try{
         const userCred=await auth.createUserWithEmailAndPassword(email,pass);
         await db.collection("users").doc(userCred.user.uid).set({ username:uname,email,createdAt:new Date().toISOString() });
-      } catch(err){ alert(err.message); }
+      }catch(err){ alert(err.message); }
     }
 
     // Login
     async function login(){
       const email=document.getElementById("email").value;
       const pass=document.getElementById("password").value;
-      try { await auth.signInWithEmailAndPassword(email,pass); }
+      try{ await auth.signInWithEmailAndPassword(email,pass); }
       catch(err){ alert(err.message); }
     }
 
     // Google login
     async function googleLogin(){
       const provider=new firebase.auth.GoogleAuthProvider();
-      try {
+      try{
         const res=await auth.signInWithPopup(provider);
         const uid=res.user.uid;
         const email=res.user.email;
@@ -159,22 +175,14 @@
           if(!q.empty){ alert("❌ Username already taken"); auth.signOut(); return; }
           await db.collection("users").doc(uid).set({ username:uname,email,createdAt:new Date().toISOString() });
         }
-      } catch(err){ alert(err.message); }
+      }catch(err){ alert(err.message); }
     }
 
     // Logout
     function logout(){ auth.signOut(); }
 
-    // Predefined keys
-    const accessKeys={
-      "pth7":7,
-      "key15":15,
-      "ishaan30":30,
-      "splkey50":50,
-      "ishaan":9999,
-      "vamya":9999,
-      "pthowner16":9999
-    };
+    // Keys
+    const accessKeys={ "pth7":7,"key15":15,"ishaan30":30,"splkey50":50,"ishaan":9999,"vamya":9999,"pthowner16":9999 };
 
     async function checkKey(){
       const key=document.getElementById("unlockKey").value.trim();
@@ -187,8 +195,7 @@
         document.getElementById("unlock-screen").classList.add("hidden");
         document.getElementById("home-screen").classList.remove("hidden");
         document.getElementById("navbar").classList.remove("hidden");
-        if(role==="admin"){ document.getElementById("adminTab").style.display="block"; }
-        else{ document.getElementById("adminTab").style.display="none"; }
+        if(role==="admin"){ document.getElementById("adminTab").style.display="block"; } else{ document.getElementById("adminTab").style.display="none"; }
       } else { document.getElementById("unlockMsg").innerText="❌ Invalid key"; }
     }
 
@@ -203,8 +210,7 @@
           document.getElementById("unlock-screen").classList.add("hidden");
           document.getElementById("home-screen").classList.remove("hidden");
           document.getElementById("navbar").classList.remove("hidden");
-          if(doc.data().role==="admin"){ document.getElementById("adminTab").style.display="block"; }
-          else{ document.getElementById("adminTab").style.display="none"; }
+          if(doc.data().role==="admin"){ document.getElementById("adminTab").style.display="block"; } else{ document.getElementById("adminTab").style.display="none"; }
         }
         document.getElementById("account-info").innerText=`${doc.data().username} (${user.email})`;
         loadSignals();
@@ -216,6 +222,54 @@
       }
     });
 
+    // Save broker keys
+    async function saveBrokerKeys(){
+      const apiKey=document.getElementById("apiKey").value.trim();
+      const secretKey=document.getElementById("secretKey").value.trim();
+      const user=auth.currentUser;
+      if(!user){ alert("Not logged in"); return; }
+      if(!apiKey||!secretKey){ alert("Both keys required"); return; }
+      await db.collection("users").doc(user.uid).update({ broker:{ apiKey,secretKey } });
+      alert("✅ Broker keys saved");
+    }
+
+    // Fetch balance
+    async function fetchBalance(){
+      const user=auth.currentUser;
+      if(!user){ alert("Not logged in"); return; }
+      const doc=await db.collection("users").doc(user.uid).get();
+      if(!doc.exists||!doc.data().broker){ alert("❌ No broker keys found"); return; }
+      const res=await fetch(backendURL+"/balance",{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ apiKey:doc.data().broker.apiKey, secret:doc.data().broker.secretKey }) });
+      const data=await res.json();
+      document.getElementById("balanceInfo").innerText="Balance: "+JSON.stringify(data.total||data);
+    }
+
+    // Buy
+    async function buy(){
+      const user=auth.currentUser;
+      if(!user){ alert("Not logged in"); return; }
+      const doc=await db.collection("users").doc(user.uid).get();
+      if(!doc.exists||!doc.data().broker){ alert("❌ No broker keys found"); return; }
+      const symbol=document.getElementById("tradeSymbol").value||"BTC/USDT";
+      const amount=document.getElementById("tradeAmount").value||"0.001";
+      const res=await fetch(backendURL+"/buy",{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ apiKey:doc.data().broker.apiKey, secret:doc.data().broker.secretKey, symbol, amount }) });
+      const data=await res.json();
+      document.getElementById("tradeResult").innerText="Buy Result: "+JSON.stringify(data);
+    }
+
+    // Sell
+    async function sell(){
+      const user=auth.currentUser;
+      if(!user){ alert("Not logged in"); return; }
+      const doc=await db.collection("users").doc(user.uid).get();
+      if(!doc.exists||!doc.data().broker){ alert("❌ No broker keys found"); return; }
+      const symbol=document.getElementById("tradeSymbol").value||"BTC/USDT";
+      const amount=document.getElementById("tradeAmount").value||"0.001";
+      const res=await fetch(backendURL+"/sell",{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ apiKey:doc.data().broker.apiKey, secret:doc.data().broker.secretKey, symbol, amount }) });
+      const data=await res.json();
+      document.getElementById("tradeResult").innerText="Sell Result: "+JSON.stringify(data);
+    }
+
     // Load signals
     function loadSignals(){
       const list=document.getElementById("signalsList");
@@ -224,20 +278,11 @@
         snap.forEach(doc=>{
           const s=doc.data();
           const cls=s.type==="BUY"?"buy":s.type==="SELL"?"sell":"hold";
-          list.innerHTML+=`
-            <div class="signal ${cls}">
-              <strong>${s.symbol}</strong> → ${s.type} @ ${s.price}
-              <div style="font-size:12px;opacity:0.8;">${new Date(s.time).toLocaleString()}</div>
-            </div>`;
+          list.innerHTML+=`<div class="signal ${cls}"><strong>${s.symbol}</strong> → ${s.type} @ ${s.price}<div style="font-size:12px;opacity:0.8;">${new Date(s.time).toLocaleString()}</div></div>`;
         });
       });
     }
 
-    // Nav switching
+    // Nav
     function showScreen(id){
-      ["home-screen","search-screen","admin-screen","account-screen"].forEach(s=>document.getElementById(s).classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
-    }
-  </script>
-</body>
-  </html>
+      ["home-screen","search-screen","admin-screen","account-screen"].forEach(s=>document.getElementById(s).classList.add("
