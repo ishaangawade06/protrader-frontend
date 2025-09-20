@@ -16,13 +16,13 @@
 </head>
 <body class="p-0 m-0">
 
-  <!-- 🔥 Intro Video -->
+  <!-- Intro Video -->
   <div id="introScreen" class="w-full h-screen flex flex-col">
     <video src="VID-20250904-WA0075.mp4" autoplay muted playsinline class="w-full h-full object-cover"></video>
     <button onclick="skipIntro()" class="absolute bottom-6 right-6 bg-blue-600 px-4 py-2 rounded">Skip</button>
   </div>
 
-  <!-- 🔐 Auth Screen -->
+  <!-- Auth -->
   <div id="authScreen" class="hidden p-6">
     <h2 class="text-2xl font-bold mb-4">Login / Signup</h2>
     <input id="username" placeholder="Username (a-z0-9, max 12)" class="w-full p-2 mb-2 rounded bg-gray-800">
@@ -32,14 +32,14 @@
     <button onclick="login()" class="w-full py-2 bg-blue-600 rounded">Login</button>
   </div>
 
-  <!-- 🔑 Key Unlock Screen -->
+  <!-- Unlock -->
   <div id="unlockScreen" class="hidden flex flex-col items-center justify-center h-screen">
     <p class="mb-4">Enter your key to unlock PTH:</p>
     <input id="unlockKey" placeholder="Enter key" class="p-2 rounded bg-gray-800">
     <button onclick="verifyKey()" class="mt-3 px-4 py-2 bg-green-600 rounded">Unlock</button>
   </div>
 
-  <!-- 🏠 Home Screen -->
+  <!-- Home -->
   <div id="homeScreen" class="hidden p-6 blurred">
     <h2 class="text-xl font-bold mb-4">Home</h2>
     <p id="balanceInfo">Balance will show here.</p>
@@ -49,7 +49,7 @@
     </div>
   </div>
 
-  <!-- 🔍 Search Screen -->
+  <!-- Search -->
   <div id="searchScreen" class="hidden p-6 blurred">
     <h2 class="text-xl font-bold mb-4">Search Assets</h2>
     <input id="searchBox" placeholder="Search crypto/stock/forex" class="w-full p-2 mb-4 rounded bg-gray-800">
@@ -57,13 +57,13 @@
     <ul id="watchlist" class="mt-4"></ul>
   </div>
 
-  <!-- ⚙️ Admin Screen -->
+  <!-- Admin -->
   <div id="adminScreen" class="hidden p-6">
     <h2 class="text-xl font-bold">Admin Panel</h2>
-    <p>Accessible with keys: <b>vamya</b> / <b>pthowner16</b></p>
+    <p>Keys: <b>vamya</b>, <b>pthowner16</b></p>
   </div>
 
-  <!-- 👤 Account Screen -->
+  <!-- Account -->
   <div id="accountScreen" class="hidden p-6">
     <h2 class="text-xl font-bold mb-4">Account</h2>
     <select id="brokerName" class="w-full p-2 mb-4 rounded bg-gray-800">
@@ -73,18 +73,16 @@
       <option value="zerodha">Zerodha</option>
       <option value="angelone">AngelOne</option>
     </select>
-
-    <!-- Common inputs -->
     <input id="apiKey" placeholder="API Key" class="w-full p-2 mb-2 rounded bg-gray-800">
     <input id="secretKey" placeholder="Secret Key" class="w-full p-2 mb-2 rounded bg-gray-800">
 
-    <!-- Zerodha extra -->
+    <!-- Zerodha -->
     <div id="zerodhaSection" class="hidden">
       <input id="zRequestToken" placeholder="Request Token" class="w-full p-2 mb-2 rounded bg-gray-800">
       <button onclick="linkZerodha()" class="px-4 py-2 bg-green-600 rounded">Link Zerodha</button>
     </div>
 
-    <!-- AngelOne extra -->
+    <!-- AngelOne -->
     <div id="angeloneSection" class="hidden">
       <input id="aClientId" placeholder="Client ID" class="w-full p-2 mb-2 rounded bg-gray-800">
       <input id="aPassword" placeholder="Password" type="password" class="w-full p-2 mb-2 rounded bg-gray-800">
@@ -97,7 +95,7 @@
     <button onclick="linkBroker()" class="w-full py-2 bg-blue-600 rounded mt-4">Link Broker</button>
   </div>
 
-  <!-- 📌 Bottom Navigation -->
+  <!-- Nav -->
   <div class="nav">
     <button onclick="showTab('homeScreen')" id="navHome">Home</button>
     <button onclick="showTab('searchScreen')" id="navSearch">Search</button>
@@ -109,82 +107,15 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
-      authDomain: "protraderhack-d67f0.firebaseapp.com",
-      projectId: "protraderhack-d67f0",
-      storageBucket: "protraderhack-d67f0.firebasestorage.app",
-      messagingSenderId: "1062485216321",
-      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth=firebase.auth();
+    const firebaseConfig={ apiKey:"AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",authDomain:"protraderhack-d67f0.firebaseapp.com",projectId:"protraderhack-d67f0",storageBucket:"protraderhack-d67f0.firebasestorage.app",messagingSenderId:"1062485216321",appId:"1:1062485216321:web:f34bb52a8acc0a75b24ac0"};
+    firebase.initializeApp(firebaseConfig); const auth=firebase.auth();
   </script>
 
-  <!-- App Logic -->
+  <!-- Logic -->
   <script>
     function skipIntro(){ document.getElementById("introScreen").style.display="none"; document.getElementById("authScreen").style.display="block"; }
-
-    function signup(){
-      const u=document.getElementById("username").value.trim();
-      if(!/^[a-z0-9]{1,12}$/.test(u)){ alert("Invalid username"); return; }
-      const e=document.getElementById("email").value; const p=document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(e,p).then(()=>alert("✅ Account created")).catch(err=>alert(err.message));
-    }
-    function login(){
-      const e=document.getElementById("email").value; const p=document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message));
-    }
+    function signup(){ const u=document.getElementById("username").value.trim(); if(!/^[a-z0-9]{1,12}$/.test(u)){alert("Invalid username");return;} const e=document.getElementById("email").value; const p=document.getElementById("password").value; auth.createUserWithEmailAndPassword(e,p).then(()=>alert("✅ Account created")).catch(err=>alert(err.message)); }
+    function login(){ const e=document.getElementById("email").value; const p=document.getElementById("password").value; auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message)); }
     auth.onAuthStateChanged(user=>{ if(user){ document.getElementById("authScreen").style.display="none"; document.getElementById("unlockScreen").style.display="flex"; }});
-
-    function verifyKey(){
-      const k=document.getElementById("unlockKey").value.trim();
-      if(["pth7","key15","ishaan30","splkey50","ishaan","vamya","pthowner16"].includes(k)){
-        document.getElementById("unlockScreen").style.display="none";
-        document.getElementById("homeScreen").classList.remove("blurred");
-        document.getElementById("searchScreen").classList.remove("blurred");
-      } else { alert("❌ Invalid key"); }
-    }
-
-    function showTab(tab){
-      ["homeScreen","searchScreen","adminScreen","accountScreen"].forEach(id=>document.getElementById(id).style.display="none");
-      document.getElementById(tab).style.display="block";
-      document.querySelectorAll(".nav button").forEach(btn=>btn.classList.remove("active"));
-      document.getElementById("nav"+tab.charAt(0).toUpperCase()+tab.slice(1,-6)).classList.add("active");
-    }
-
-    // Broker logic
-    async function linkBroker(){
-      const user=auth.currentUser; if(!user){alert("Not logged in");return;}
-      const broker=document.getElementById("brokerName").value;
-      const apiKey=document.getElementById("apiKey").value.trim();
-      const secret=document.getElementById("secretKey").value.trim();
-      let url="";
-      if(broker==="binance"||broker==="exness") url="/binance/link";
-      else if(broker==="zerodha") return;
-      else if(broker==="angelone") return;
-      const res=await fetch("https://protrader-backend-sbus.onrender.com"+url,{
-        method:"POST", headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ uid:user.uid, apiKey, secretKey:secret, exchange:broker })
-      });
-      const data=await res.json(); alert(data.message||data.error);
-    }
-
-    async function linkZerodha(){
-      const user=auth.currentUser; if(!user){alert("Not logged in");return;}
-      const token=document.getElementById("zRequestToken").value.trim();
-      const res=await fetch("https://protrader-backend-sbus.onrender.com/zerodha/login",{
-        method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ uid:user.uid, requestToken:token })
-      });
-      const data=await res.json(); alert(data.message||data.error);
-    }
-
-    async function linkAngelOne(){ /* defined in backend code earlier */ }
-    async function fetchAngelOneBalance(){ /* defined earlier */ }
-    async function angelOneTrade(){ /* defined earlier */ }
-
-    function placeTrade(buy=true){ alert("Simulated "+(buy?"BUY":"SELL")); }
-    function addToWatchlist(){ const s=document.getElementById("searchBox").value; if(s){ let li=document.createElement("li"); li.innerText=s; document.getElementById("watchlist").appendChild(li); } }
-  </script>
-</body>
-      </html>
+    function verifyKey(){ const k=document.getElementById("unlockKey").value.trim(); if(["pth7","key15","ishaan30","splkey50","ishaan","vamya","pthowner16"].includes(k)){ document.getElementById("unlockScreen").style.display="none"; document.getElementById("homeScreen").classList.remove("blurred"); document.getElementById("searchScreen").classList.remove("blurred"); } else { alert("❌ Invalid key"); } }
+    function showTab(tab){ ["homeScreen","searchScreen","adminScreen","accountScreen"].forEach(id=>document.getElementById(id).style.display="none"); document.getElementById(tab).style.display="block"; document.querySelectorAll(".nav button").forEach(btn=>btn.classList.remove("active")); document.getElementById("nav"+tab.charAt(0).toUpperCase()+tab.slice(1,-6)).classList.add("
