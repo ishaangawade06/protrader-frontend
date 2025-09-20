@@ -16,11 +16,11 @@
     input { width:80%; }
     button { cursor:pointer; }
     .container { padding:20px; text-align:center; }
+    .hidden { display:none; }
 
     /* Nav bar */
     .navbar { position:fixed; bottom:0; left:0; width:100%; display:flex; justify-content:space-around; background:#111a2e; padding:10px 0; }
-    .nav-item { color:#e6eef8; font-size:14px; }
-    .hidden { display:none; }
+    .nav-item { color:#e6eef8; font-size:14px; cursor:pointer; }
 
     /* Signals */
     #signalsList { margin-top:20px; text-align:left; }
@@ -52,10 +52,32 @@
     <button onclick="googleLogin()">Login with Google</button>
   </div>
 
+  <!-- Unlock Screen -->
+  <div id="unlock-screen" class="container hidden" style="backdrop-filter: blur(5px); height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+    <h2>🔒 Enter Access Key</h2>
+    <input id="unlockKey" placeholder="Enter key" maxlength="20">
+    <button onclick="checkKey()">Unlock</button>
+    <p id="unlockMsg" style="color:red;"></p>
+  </div>
+
   <!-- Home Screen -->
   <div id="home-screen" class="container hidden">
     <h2>✅ Welcome to ProTraderHack</h2>
     <div id="signalsList"></div>
+  </div>
+
+  <!-- Search Screen -->
+  <div id="search-screen" class="container hidden">
+    <h2>🔍 Search Assets</h2>
+    <input id="searchInput" placeholder="Search crypto/stock/forex">
+    <button>Search</button>
+    <div id="searchResults"></div>
+  </div>
+
+  <!-- Admin Screen -->
+  <div id="admin-screen" class="container hidden">
+    <h2>🛡 Admin Panel</h2>
+    <p>Only visible if role=admin</p>
   </div>
 
   <!-- Account Screen -->
@@ -69,7 +91,7 @@
   <div class="navbar hidden" id="navbar">
     <div class="nav-item" onclick="showScreen('home-screen')">🏠 Home</div>
     <div class="nav-item" onclick="showScreen('search-screen')">🔍 Search</div>
-    <div class="nav-item" onclick="showScreen('admin-screen')">🛡 Admin</div>
+    <div class="nav-item" id="adminTab" onclick="showScreen('admin-screen')">🛡 Admin</div>
     <div class="nav-item" onclick="showScreen('account-screen')">👤 Account</div>
   </div>
 
@@ -88,8 +110,8 @@
     const db = firebase.firestore();
 
     // Intro skip
-    const introVideo = document.getElementById("introVideo");
-    introVideo.onended = ()=>skipIntro();
+    const introVideo=document.getElementById("introVideo");
+    introVideo.onended=()=>skipIntro();
     function skipIntro(){
       document.getElementById("intro-screen").style.display="none";
       document.getElementById("auth-screen").classList.remove("hidden");
@@ -100,15 +122,17 @@
       return /^[a-z0-9]{1,12}$/.test(name);
     }
 
-    // Signup
+    // Signup with username check
     async function signup(){
       const uname=document.getElementById("username").value.trim();
-      const email=document.getElementById("email").value;
+      const email=document.getElementById("email").value.trim();
       const pass=document.getElementById("password").value;
       if(!validateUsername(uname)){ alert("❌ Invalid username"); return; }
+      const q=await db.collection("users").where("username","==",uname).get();
+      if(!q.empty){ alert("❌ Username already taken"); return; }
       try {
         const userCred=await auth.createUserWithEmailAndPassword(email,pass);
-        await db.collection("users").doc(userCred.user.uid).set({ username: uname, email });
+        await db.collection("users").doc(userCred.user.uid).set({ username:uname,email,createdAt:new Date().toISOString() });
       } catch(err){ alert(err.message); }
     }
 
@@ -126,11 +150,14 @@
       try {
         const res=await auth.signInWithPopup(provider);
         const uid=res.user.uid;
+        const email=res.user.email;
         const doc=await db.collection("users").doc(uid).get();
         if(!doc.exists){
           let uname=prompt("Choose username (a-z,0-9, max12):");
-          if(!validateUsername(uname)) { alert("❌ Invalid username"); auth.signOut(); return; }
-          await db.collection("users").doc(uid).set({ username: uname, email: res.user.email });
+          if(!validateUsername(uname)){ alert("❌ Invalid username"); auth.signOut(); return; }
+          const q=await db.collection("users").where("username","==",uname).get();
+          if(!q.empty){ alert("❌ Username already taken"); auth.signOut(); return; }
+          await db.collection("users").doc(uid).set({ username:uname,email,createdAt:new Date().toISOString() });
         }
       } catch(err){ alert(err.message); }
     }
@@ -138,20 +165,53 @@
     // Logout
     function logout(){ auth.signOut(); }
 
+    // Predefined keys
+    const accessKeys={
+      "pth7":7,
+      "key15":15,
+      "ishaan30":30,
+      "splkey50":50,
+      "ishaan":9999,
+      "vamya":9999,
+      "pthowner16":9999
+    };
+
+    async function checkKey(){
+      const key=document.getElementById("unlockKey").value.trim();
+      const user=auth.currentUser;
+      if(!user){ alert("Not logged in"); return; }
+      if(accessKeys[key]){
+        const expiry=accessKeys[key]===9999?null:new Date(Date.now()+accessKeys[key]*24*3600*1000).toISOString();
+        let role="user"; if(key==="vamya"||key==="pthowner16"){ role="admin"; }
+        await db.collection("users").doc(user.uid).update({ accessKey:key,role,expiry });
+        document.getElementById("unlock-screen").classList.add("hidden");
+        document.getElementById("home-screen").classList.remove("hidden");
+        document.getElementById("navbar").classList.remove("hidden");
+        if(role==="admin"){ document.getElementById("adminTab").style.display="block"; }
+        else{ document.getElementById("adminTab").style.display="none"; }
+      } else { document.getElementById("unlockMsg").innerText="❌ Invalid key"; }
+    }
+
     // Auth state
     auth.onAuthStateChanged(async user=>{
       if(user){
-        document.getElementById("auth-screen").classList.add("hidden");
-        document.getElementById("home-screen").classList.remove("hidden");
-        document.getElementById("navbar").classList.remove("hidden");
-
-        const u=await db.collection("users").doc(user.uid).get();
-        document.getElementById("account-info").innerText=`${u.data().username} (${user.email})`;
-
+        const doc=await db.collection("users").doc(user.uid).get();
+        if(!doc.exists||!doc.data().accessKey){
+          document.getElementById("auth-screen").classList.add("hidden");
+          document.getElementById("unlock-screen").classList.remove("hidden");
+        } else {
+          document.getElementById("unlock-screen").classList.add("hidden");
+          document.getElementById("home-screen").classList.remove("hidden");
+          document.getElementById("navbar").classList.remove("hidden");
+          if(doc.data().role==="admin"){ document.getElementById("adminTab").style.display="block"; }
+          else{ document.getElementById("adminTab").style.display="none"; }
+        }
+        document.getElementById("account-info").innerText=`${doc.data().username} (${user.email})`;
         loadSignals();
       } else {
         document.getElementById("auth-screen").classList.remove("hidden");
         document.getElementById("home-screen").classList.add("hidden");
+        document.getElementById("unlock-screen").classList.add("hidden");
         document.getElementById("navbar").classList.add("hidden");
       }
     });
@@ -175,9 +235,9 @@
 
     // Nav switching
     function showScreen(id){
-      ["home-screen","account-screen"].forEach(s=>document.getElementById(s).classList.add("hidden"));
+      ["home-screen","search-screen","admin-screen","account-screen"].forEach(s=>document.getElementById(s).classList.add("hidden"));
       document.getElementById(id).classList.remove("hidden");
     }
   </script>
 </body>
-      </html>
+  </html>
