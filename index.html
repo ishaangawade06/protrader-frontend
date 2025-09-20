@@ -11,11 +11,18 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#0b1220; color:#e6eef8; }
-    .container { padding:20px; text-align:center; }
+    body { margin:0; padding:0; font-family: Arial, sans-serif; background:#0b1220; color:#e6eef8; }
     input, button { padding:10px; margin:5px; border-radius:8px; border:none; }
     input { width:80%; }
     button { cursor:pointer; }
+    .container { padding:20px; text-align:center; }
+
+    /* Nav bar */
+    .navbar { position:fixed; bottom:0; left:0; width:100%; display:flex; justify-content:space-around; background:#111a2e; padding:10px 0; }
+    .nav-item { color:#e6eef8; font-size:14px; }
+    .hidden { display:none; }
+
+    /* Signals */
     #signalsList { margin-top:20px; text-align:left; }
     .signal { background:#111a2e; padding:12px; margin-bottom:10px; border-radius:8px; }
     .buy { border-left:5px solid #22c55e; }
@@ -24,23 +31,46 @@
   </style>
 </head>
 <body>
-  <!-- Login/Signup -->
-  <div id="auth-screen" class="container">
-    <h2>🔒 ProTraderHack Login</h2>
+
+  <!-- Intro Splash Video -->
+  <div id="intro-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:black;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+    <video id="introVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;">
+      <source src="VID-20250904-WA0075.mp4" type="video/mp4">
+      Your browser does not support video.
+    </video>
+    <button onclick="skipIntro()" style="position:absolute;bottom:20px;right:20px;background:#007bff;color:white;padding:10px 20px;border-radius:8px;">Skip</button>
+  </div>
+
+  <!-- Login/Signup Screen -->
+  <div id="auth-screen" class="container hidden">
+    <h2>🔒 Login to ProTraderHack</h2>
+    <input id="username" placeholder="Username (a-z,0-9, max12)" maxlength="12"><br>
     <input id="email" type="email" placeholder="Email"><br>
     <input id="password" type="password" placeholder="Password"><br>
     <button onclick="signup()">Sign Up</button>
-    <button onclick="login()">Login</button>
-    <button onclick="skipLogin()">Skip</button>
+    <button onclick="login()">Login</button><br>
+    <button onclick="googleLogin()">Login with Google</button>
   </div>
 
-  <!-- Home -->
-  <div id="home-screen" class="container" style="display:none;">
+  <!-- Home Screen -->
+  <div id="home-screen" class="container hidden">
     <h2>✅ Welcome to ProTraderHack</h2>
-    <button onclick="logout()">Logout</button>
-
-    <h3 style="margin-top:20px;">📢 Live Trading Signals</h3>
     <div id="signalsList"></div>
+  </div>
+
+  <!-- Account Screen -->
+  <div id="account-screen" class="container hidden">
+    <h2>👤 My Account</h2>
+    <p id="account-info"></p>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="navbar hidden" id="navbar">
+    <div class="nav-item" onclick="showScreen('home-screen')">🏠 Home</div>
+    <div class="nav-item" onclick="showScreen('search-screen')">🔍 Search</div>
+    <div class="nav-item" onclick="showScreen('admin-screen')">🛡 Admin</div>
+    <div class="nav-item" onclick="showScreen('account-screen')">👤 Account</div>
   </div>
 
   <script>
@@ -57,40 +87,76 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Signup
-    function signup(){
-      const e=document.getElementById("email").value;
-      const p=document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(e,p).catch(err=>alert(err.message));
-    }
-    // Login
-    function login(){
-      const e=document.getElementById("email").value;
-      const p=document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message));
-    }
-    // Logout
-    function logout(){ auth.signOut(); }
-    // Skip login
-    function skipLogin(){
-      document.getElementById("auth-screen").style.display="none";
-      document.getElementById("home-screen").style.display="block";
-      loadSignals();
+    // Intro skip
+    const introVideo = document.getElementById("introVideo");
+    introVideo.onended = ()=>skipIntro();
+    function skipIntro(){
+      document.getElementById("intro-screen").style.display="none";
+      document.getElementById("auth-screen").classList.remove("hidden");
     }
 
+    // Username validation
+    function validateUsername(name){
+      return /^[a-z0-9]{1,12}$/.test(name);
+    }
+
+    // Signup
+    async function signup(){
+      const uname=document.getElementById("username").value.trim();
+      const email=document.getElementById("email").value;
+      const pass=document.getElementById("password").value;
+      if(!validateUsername(uname)){ alert("❌ Invalid username"); return; }
+      try {
+        const userCred=await auth.createUserWithEmailAndPassword(email,pass);
+        await db.collection("users").doc(userCred.user.uid).set({ username: uname, email });
+      } catch(err){ alert(err.message); }
+    }
+
+    // Login
+    async function login(){
+      const email=document.getElementById("email").value;
+      const pass=document.getElementById("password").value;
+      try { await auth.signInWithEmailAndPassword(email,pass); }
+      catch(err){ alert(err.message); }
+    }
+
+    // Google login
+    async function googleLogin(){
+      const provider=new firebase.auth.GoogleAuthProvider();
+      try {
+        const res=await auth.signInWithPopup(provider);
+        const uid=res.user.uid;
+        const doc=await db.collection("users").doc(uid).get();
+        if(!doc.exists){
+          let uname=prompt("Choose username (a-z,0-9, max12):");
+          if(!validateUsername(uname)) { alert("❌ Invalid username"); auth.signOut(); return; }
+          await db.collection("users").doc(uid).set({ username: uname, email: res.user.email });
+        }
+      } catch(err){ alert(err.message); }
+    }
+
+    // Logout
+    function logout(){ auth.signOut(); }
+
     // Auth state
-    auth.onAuthStateChanged(user=>{
+    auth.onAuthStateChanged(async user=>{
       if(user){
-        document.getElementById("auth-screen").style.display="none";
-        document.getElementById("home-screen").style.display="block";
+        document.getElementById("auth-screen").classList.add("hidden");
+        document.getElementById("home-screen").classList.remove("hidden");
+        document.getElementById("navbar").classList.remove("hidden");
+
+        const u=await db.collection("users").doc(user.uid).get();
+        document.getElementById("account-info").innerText=`${u.data().username} (${user.email})`;
+
         loadSignals();
       } else {
-        document.getElementById("auth-screen").style.display="block";
-        document.getElementById("home-screen").style.display="none";
+        document.getElementById("auth-screen").classList.remove("hidden");
+        document.getElementById("home-screen").classList.add("hidden");
+        document.getElementById("navbar").classList.add("hidden");
       }
     });
 
-    // Load live signals
+    // Load signals
     function loadSignals(){
       const list=document.getElementById("signalsList");
       db.collection("signals").orderBy("time","desc").limit(20).onSnapshot(snap=>{
@@ -106,6 +172,12 @@
         });
       });
     }
+
+    // Nav switching
+    function showScreen(id){
+      ["home-screen","account-screen"].forEach(s=>document.getElementById(s).classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
+    }
   </script>
 </body>
-</html>
+      </html>
