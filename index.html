@@ -1,121 +1,428 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>PTH App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ProTraderHack (PTH)</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body { background:#0b1220; color:#e6eef8; font-family:Inter,Arial; }
-    .hidden { display:none; }
-    .nav { position:fixed; bottom:0; left:0; right:0; background:#111827; display:flex; justify-content:space-around; padding:10px 0; }
-    .nav button { flex:1; color:#9ca3af; }
-    .nav button.active { color:#22c55e; font-weight:bold; }
-    .blurred { filter:blur(5px); pointer-events:none; }
+    body { background:#071024; color:#e6eef8; font-family:Inter, Arial, sans-serif; margin:0; padding:0; }
+    .container { padding:16px; }
+    input, select, button, textarea { width:100%; padding:10px; margin:6px 0; border-radius:8px; border:0; }
+    button { cursor:pointer; }
+    .muted { color:#9aa6b2; font-size:13px; }
+    .card { background:#081228; padding:12px; border-radius:10px; margin-bottom:12px; }
+    .signal { background:#0b1a2b; padding:10px; border-radius:8px; margin-bottom:8px; }
+    .buy { border-left:4px solid #16a34a; }
+    .sell { border-left:4px solid #ef4444; }
+    .hold { border-left:4px solid #64748b; }
+    .nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:#081827; border-top:1px solid rgba(255,255,255,0.03); }
+    .nav button { flex:1; padding:12px 0; color:#cbd5e1; background:transparent; border:0; }
+    .nav button.active { color:#34d399; font-weight:700; }
+    .small { font-size:13px; color:#9aa6b2; }
+    .blur { filter: blur(6px); pointer-events:none; opacity:0.8; }
   </style>
 </head>
-<body class="p-0 m-0">
+<body>
 
-  <!-- Intro Video -->
-  <div id="introScreen" class="w-full h-screen flex flex-col">
-    <video src="VID-20250904-WA0075.mp4" autoplay muted playsinline class="w-full h-full object-cover"></video>
-    <button onclick="skipIntro()" class="absolute bottom-6 right-6 bg-blue-600 px-4 py-2 rounded">Skip</button>
+  <!-- Intro video (full screen) -->
+  <div id="intro-screen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:black;">
+    <video id="introVideo" src="VID-20250904-WA0075.mp4" autoplay muted playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+    <button onclick="skipIntro()" style="position:absolute; right:16px; bottom:18px; background:#0366d6; color:white; padding:10px 14px; border-radius:8px; border:0;">Skip</button>
   </div>
 
-  <!-- Auth -->
-  <div id="authScreen" class="hidden p-6">
-    <h2 class="text-2xl font-bold mb-4">Login / Signup</h2>
-    <input id="username" placeholder="Username (a-z0-9, max 12)" class="w-full p-2 mb-2 rounded bg-gray-800">
-    <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-800">
-    <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-4 rounded bg-gray-800">
-    <button onclick="signup()" class="w-full py-2 bg-green-600 rounded mb-2">Sign Up</button>
-    <button onclick="login()" class="w-full py-2 bg-blue-600 rounded">Login</button>
-  </div>
-
-  <!-- Unlock -->
-  <div id="unlockScreen" class="hidden flex flex-col items-center justify-center h-screen">
-    <p class="mb-4">Enter your key to unlock PTH:</p>
-    <input id="unlockKey" placeholder="Enter key" class="p-2 rounded bg-gray-800">
-    <button onclick="verifyKey()" class="mt-3 px-4 py-2 bg-green-600 rounded">Unlock</button>
-  </div>
-
-  <!-- Home -->
-  <div id="homeScreen" class="hidden p-6 blurred">
-    <h2 class="text-xl font-bold mb-4">Home</h2>
-    <p id="balanceInfo">Balance will show here.</p>
-    <div class="mt-4">
-      <button onclick="placeTrade()" class="px-4 py-2 bg-green-600 rounded mr-2">Buy</button>
-      <button onclick="placeTrade(false)" class="px-4 py-2 bg-red-600 rounded">Sell</button>
+  <!-- AUTH / SIGNUP -->
+  <div id="auth-screen" class="container hidden">
+    <div class="card">
+      <h2 class="text-lg font-bold">🔒 ProTraderHack — Login / Sign up</h2>
+      <input id="username" placeholder="Username (a-z0-9, max 12)" maxlength="12" />
+      <input id="email" type="email" placeholder="Email" />
+      <input id="password" type="password" placeholder="Password" />
+      <button onclick="signup()" style="background:#10b981;color:white">Sign Up</button>
+      <button onclick="login()" style="background:#2563eb;color:white">Login</button>
+      <button onclick="googleLogin()" style="background:#ef4444;color:white">Sign in with Google</button>
+      <p class="muted">Username is required and must contain only lowercase letters and numbers (max 12).</p>
     </div>
   </div>
 
-  <!-- Search -->
-  <div id="searchScreen" class="hidden p-6 blurred">
-    <h2 class="text-xl font-bold mb-4">Search Assets</h2>
-    <input id="searchBox" placeholder="Search crypto/stock/forex" class="w-full p-2 mb-4 rounded bg-gray-800">
-    <button onclick="addToWatchlist()" class="px-4 py-2 bg-blue-600 rounded">Add to Watchlist</button>
-    <ul id="watchlist" class="mt-4"></ul>
+  <!-- Unlock screen -->
+  <div id="unlock-screen" class="container hidden">
+    <div class="card" style="text-align:center;">
+      <h2 class="text-lg font-bold">🔐 Enter Access Key</h2>
+      <input id="unlockKey" placeholder="Enter access key (e.g. pth7, key15, ishaan30, splkey50, ishaan, vamya, pthowner16)"/>
+      <button onclick="checkKey()" style="background:#10b981;color:white">Unlock</button>
+      <p id="unlockMsg" class="small" style="color:#f97316;"></p>
+    </div>
   </div>
 
-  <!-- Admin -->
-  <div id="adminScreen" class="hidden p-6">
-    <h2 class="text-xl font-bold">Admin Panel</h2>
-    <p>Keys: <b>vamya</b>, <b>pthowner16</b></p>
-  </div>
+  <!-- HOME -->
+  <div id="home-screen" class="container hidden blur">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 class="text-lg font-bold">🏠 Home</h2>
+        <div id="user-badge" class="small muted">—</div>
+      </div>
 
-  <!-- Account -->
-  <div id="accountScreen" class="hidden p-6">
-    <h2 class="text-xl font-bold mb-4">Account</h2>
-    <select id="brokerName" class="w-full p-2 mb-4 rounded bg-gray-800">
-      <option value="">Select Broker</option>
-      <option value="binance">Binance</option>
-      <option value="exness">Exness</option>
-      <option value="zerodha">Zerodha</option>
-      <option value="angelone">AngelOne</option>
-    </select>
-    <input id="apiKey" placeholder="API Key" class="w-full p-2 mb-2 rounded bg-gray-800">
-    <input id="secretKey" placeholder="Secret Key" class="w-full p-2 mb-2 rounded bg-gray-800">
+      <div id="account-balance" class="small muted" style="margin-top:8px;">No broker linked</div>
 
-    <!-- Zerodha -->
-    <div id="zerodhaSection" class="hidden">
-      <input id="zRequestToken" placeholder="Request Token" class="w-full p-2 mb-2 rounded bg-gray-800">
-      <button onclick="linkZerodha()" class="px-4 py-2 bg-green-600 rounded">Link Zerodha</button>
+      <div style="margin-top:12px;">
+        <h3 class="small">Quick Trade</h3>
+        <input id="quickSymbol" placeholder="Symbol (Binance/Exness e.g. BTC/USDT). For Zerodha: NSE:INFY, AngelOne: INFY-NSE" />
+        <input id="quickAmount" placeholder="Amount / Quantity" />
+        <div style="display:flex; gap:8px;">
+          <button onclick="quickTrade('buy')" style="flex:1;background:#16a34a;color:white">Buy</button>
+          <button onclick="quickTrade('sell')" style="flex:1;background:#ef4444;color:white">Sell</button>
+        </div>
+        <div id="tradeResult" class="small muted" style="margin-top:8px;"></div>
+      </div>
     </div>
 
-    <!-- AngelOne -->
-    <div id="angeloneSection" class="hidden">
-      <input id="aClientId" placeholder="Client ID" class="w-full p-2 mb-2 rounded bg-gray-800">
-      <input id="aPassword" placeholder="Password" type="password" class="w-full p-2 mb-2 rounded bg-gray-800">
-      <input id="aTotp" placeholder="TOTP Secret" class="w-full p-2 mb-2 rounded bg-gray-800">
-      <button onclick="linkAngelOne()" class="px-4 py-2 bg-green-600 rounded mb-2">Link AngelOne</button>
-      <button onclick="fetchAngelOneBalance()" class="px-4 py-2 bg-blue-600 rounded mb-2">Check Balance</button>
-      <button onclick="angelOneTrade()" class="px-4 py-2 bg-red-600 rounded">Place Trade</button>
+    <div class="card" style="margin-top:12px;">
+      <h3 class="text-base font-semibold">📢 Live Signals</h3>
+      <div id="signalsList" style="margin-top:10px;">
+        <p class="small muted">No signals yet — worker may not have run.</p>
+      </div>
     </div>
-
-    <button onclick="linkBroker()" class="w-full py-2 bg-blue-600 rounded mt-4">Link Broker</button>
   </div>
 
-  <!-- Nav -->
+  <!-- SEARCH -->
+  <div id="search-screen" class="container hidden blur">
+    <div class="card">
+      <h2 class="text-lg font-bold">🔍 Search & Watchlist</h2>
+      <input id="searchInput" placeholder="Type symbol (e.g. INFY-NSE or BTC/USDT)" />
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button onclick="addToWatchlist()" style="flex:1;background:#2563eb;color:white">Add to Watchlist</button>
+        <button onclick="refreshAngelSymbols()" style="flex:1;background:#f59e0b;color:white">Refresh AngelOne Symbols</button>
+      </div>
+      <p class="small muted">Tip: For AngelOne use format <code>SYMBOL-NSE</code>. For Zerodha use <code>NSE:SYMBOL</code>.</p>
+
+      <div style="margin-top:12px;">
+        <h3 class="small font-semibold">Watchlist</h3>
+        <ul id="watchlist" style="margin-top:8px; list-style:none; padding:0;"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="admin-screen" class="container hidden">
+    <div class="card">
+      <h2 class="text-lg font-bold">🛡 Admin Panel</h2>
+      <p class="small muted">Only visible if your user was unlocked with admin key (vamya / pthowner16).</p>
+
+      <div style="margin-top:10px;">
+        <h3 class="small font-semibold">Owner Keys</h3>
+        <p class="small muted">Manage keys in Firebase (admin only) — open admin repo to modify keys.</p>
+      </div>
+
+      <div style="margin-top:10px;">
+        <h3 class="small font-semibold">AngelOne Symbols</h3>
+        <button onclick="refreshAngelSymbols()" style="background:#f59e0b;color:white">Manual Refresh</button>
+        <p id="refreshMsg" class="small muted" style="margin-top:6px;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNT -->
+  <div id="account-screen" class="container hidden blur">
+    <div class="card">
+      <h2 class="text-lg font-bold">👤 Account & Brokers</h2>
+      <div class="small muted" id="accountInfo">—</div>
+
+      <h3 class="small font-semibold" style="margin-top:10px;">Select Broker</h3>
+      <select id="brokerSelect">
+        <option value="">Select broker</option>
+        <option value="binance">Binance</option>
+        <option value="exness">Exness</option>
+        <option value="zerodha">Zerodha (Kite)</option>
+        <option value="angelone">AngelOne</option>
+      </select>
+
+      <div id="common-keys">
+        <input id="apiKey" placeholder="API Key" />
+        <input id="secretKey" placeholder="Secret / API Secret" />
+      </div>
+
+      <!-- Zerodha extra -->
+      <div id="zerodha-area" style="display:none; margin-top:8px;">
+        <input id="zerodhaRequestToken" placeholder="Zerodha request_token (after Kite login redirect)" />
+        <button onclick="linkZerodha()" style="background:#06b6d4;color:black">Link Zerodha (use request token)</button>
+        <button onclick="fetchZerodhaBalance()" style="background:#60a5fa;color:white; margin-top:6px;">Check Zerodha Balance</button>
+      </div>
+
+      <!-- AngelOne extra -->
+      <div id="angelone-area" style="display:none; margin-top:8px;">
+        <input id="angelClientId" placeholder="AngelOne Client ID (login id)" />
+        <input id="angelPassword" type="password" placeholder="AngelOne password" />
+        <input id="angelTotp" placeholder="TOTP Secret (or OTP)" />
+        <button onclick="linkAngelOne()" style="background:#16a34a;color:white">Link AngelOne</button>
+        <button onclick="fetchAngelOneBalance()" style="background:#60a5fa;color:white; margin-top:6px;">Check AngelOne Balance</button>
+        <button onclick="refreshAngelSymbols()" style="background:#f59e0b;color:black; margin-top:6px;">Refresh AngelOne Symbols</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <button onclick="saveBroker()" style="background:#2563eb;color:white">Save Broker Keys (to Firestore)</button>
+        <button onclick="checkLinkedBrokerBalance()" style="background:#10b981;color:white; margin-top:8px;">Check Linked Broker Balance</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <button onclick="logout()" style="background:#ef4444;color:white">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
   <div class="nav">
-    <button onclick="showTab('homeScreen')" id="navHome">Home</button>
-    <button onclick="showTab('searchScreen')" id="navSearch">Search</button>
-    <button onclick="showTab('adminScreen')" id="navAdmin">Admin</button>
-    <button onclick="showTab('accountScreen')" id="navAccount">Account</button>
+    <button id="navHome" onclick="navTo('home')">Home</button>
+    <button id="navSearch" onclick="navTo('search')">Search</button>
+    <button id="navAdmin" onclick="navTo('admin')">Admin</button>
+    <button id="navAccount" onclick="navTo('account')">Account</button>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase SDK (compat for simplicity on mobile) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script>
-    const firebaseConfig={ apiKey:"AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",authDomain:"protraderhack-d67f0.firebaseapp.com",projectId:"protraderhack-d67f0",storageBucket:"protraderhack-d67f0.firebasestorage.app",messagingSenderId:"1062485216321",appId:"1:1062485216321:web:f34bb52a8acc0a75b24ac0"};
-    firebase.initializeApp(firebaseConfig); const auth=firebase.auth();
-  </script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <!-- Logic -->
   <script>
-    function skipIntro(){ document.getElementById("introScreen").style.display="none"; document.getElementById("authScreen").style.display="block"; }
-    function signup(){ const u=document.getElementById("username").value.trim(); if(!/^[a-z0-9]{1,12}$/.test(u)){alert("Invalid username");return;} const e=document.getElementById("email").value; const p=document.getElementById("password").value; auth.createUserWithEmailAndPassword(e,p).then(()=>alert("✅ Account created")).catch(err=>alert(err.message)); }
-    function login(){ const e=document.getElementById("email").value; const p=document.getElementById("password").value; auth.signInWithEmailAndPassword(e,p).catch(err=>alert(err.message)); }
-    auth.onAuthStateChanged(user=>{ if(user){ document.getElementById("authScreen").style.display="none"; document.getElementById("unlockScreen").style.display="flex"; }});
-    function verifyKey(){ const k=document.getElementById("unlockKey").value.trim(); if(["pth7","key15","ishaan30","splkey50","ishaan","vamya","pthowner16"].includes(k)){ document.getElementById("unlockScreen").style.display="none"; document.getElementById("homeScreen").classList.remove("blurred"); document.getElementById("searchScreen").classList.remove("blurred"); } else { alert("❌ Invalid key"); } }
-    function showTab(tab){ ["homeScreen","searchScreen","adminScreen","accountScreen"].forEach(id=>document.getElementById(id).style.display="none"); document.getElementById(tab).style.display="block"; document.querySelectorAll(".nav button").forEach(btn=>btn.classList.remove("active")); document.getElementById("nav"+tab.charAt(0).toUpperCase()+tab.slice(1,-6)).classList.add("
+  // ========== CONFIG ==========
+  const BACKEND = "https://protrader-backend-sbus.onrender.com";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+    authDomain: "protraderhack-d67f0.firebaseapp.com",
+    projectId: "protraderhack-d67f0",
+    storageBucket: "protraderhack-d67f0.firebasestorage.app",
+    messagingSenderId: "1062485216321",
+    appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // ========== UI HELPERS ==========
+  function show(id) {
+    document.getElementById("home-screen").classList.add("hidden");
+    document.getElementById("search-screen").classList.add("hidden");
+    document.getElementById("admin-screen").classList.add("hidden");
+    document.getElementById("account-screen").classList.add("hidden");
+    document.getElementById("auth-screen").classList.add("hidden");
+    document.getElementById("unlock-screen").classList.add("hidden");
+    document.getElementById(id+"-screen")?.classList.remove("hidden");
+    // nav highlight
+    document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+    if(id==="home") document.getElementById("navHome").classList.add("active");
+    if(id==="search") document.getElementById("navSearch").classList.add("active");
+    if(id==="admin") document.getElementById("navAdmin").classList.add("active");
+    if(id==="account") document.getElementById("navAccount").classList.add("active");
+  }
+
+  // ========== INTRO VIDEO ==========
+  const introVideo = document.getElementById("introVideo");
+  function skipIntro(){
+    document.getElementById("intro-screen").style.display = "none";
+    document.getElementById("auth-screen").classList.remove("hidden");
+  }
+  introVideo.onended = skipIntro;
+
+  // ========== AUTH ==========
+  function validateUsername(name){
+    return /^[a-z0-9]{1,12}$/.test(name);
+  }
+
+  async function signup(){
+    const uname = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const pass = document.getElementById("password").value;
+    if(!validateUsername(uname)){ alert("Username invalid: only lowercase letters and numbers, max 12"); return; }
+    if(!email || !pass){ alert("Email & password required"); return; }
+    try {
+      const { user } = await auth.createUserWithEmailAndPassword(email, pass);
+      await db.collection("users").doc(user.uid).set({ username: uname, email, createdAt: new Date().toISOString() });
+      alert("Account created — now log in.");
+    } catch (e) {
+      alert("Sign up error: " + e.message);
+    }
+  }
+
+  async function login(){
+    const email = document.getElementById("email").value.trim();
+    const pass = document.getElementById("password").value;
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+    } catch(e){
+      alert("Login error: "+e.message);
+    }
+  }
+
+  // Google sign-in with username enforcement
+  async function googleLogin(){
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      const res = await auth.signInWithPopup(provider);
+      const uid = res.user.uid;
+      const doc = await db.collection("users").doc(uid).get();
+      if(!doc.exists){
+        let uname = prompt("Choose username (a-z0-9, max12):");
+        if(!uname) { await auth.signOut(); return; }
+        uname = uname.trim();
+        if(!validateUsername(uname)){ alert("Invalid username"); await auth.signOut(); return; }
+        const q = await db.collection("users").where("username","==",uname).get();
+        if(!q.empty){ alert("Username taken"); await auth.signOut(); return; }
+        await db.collection("users").doc(uid).set({ username: uname, email: res.user.email, createdAt: new Date().toISOString() });
+      }
+    } catch(e){ alert("Google sign-in error: "+ e.message); }
+  }
+
+  // ========== AUTH STATE & UNLOCK ==========
+  auth.onAuthStateChanged(async user=>{
+    if(user){
+      // load profile -> check if user already has access key
+      const doc = await db.collection("users").doc(user.uid).get();
+      const data = doc.exists ? doc.data() : null;
+      document.getElementById("user-badge").innerText = data?.username ? `${data.username}` : user.email;
+      // if no accessKey saved on profile -> show unlock screen
+      if(!data || !data.accessKey){
+        show("unlock");
+      } else {
+        // check expiry if present
+        if(data.expiry){
+          const exp = new Date(data.expiry);
+          if(exp < new Date()){
+            // expired -> require unlock again
+            show("unlock");
+            return;
+          }
+        }
+        // unlocked
+        // decide admin visibility
+        if(data.role === "admin"){ document.getElementById("navAdmin").style.display = "inline-block"; }
+        else { document.getElementById("navAdmin").style.display = "inline-block"; } // still visible but admin panel will check role
+        show("home");
+        // remove blur and allow UI
+        document.getElementById("home-screen").classList.remove("blur");
+        document.getElementById("search-screen").classList.remove("blur");
+        loadSignals(); loadWatchlistFromFirestore();
+      }
+      // fill account info text
+      document.getElementById("accountInfo").innerText = data?.username ? `${data.username} • ${user.email}` : user.email;
+    } else {
+      // not logged in
+      show("auth");
+    }
+  });
+
+  // Access keys mapping
+  const ACCESS_KEYS = {
+    "pth7": 7,
+    "key15": 15,
+    "ishaan30": 30,
+    "splkey50": 50,
+    "ishaan": null,
+    "vamya": null,
+    "pthowner16": null
+  };
+
+  async function checkKey(){
+    // deprecated: kept for backwards compatibility
+    return await verifyKey();
+  }
+
+  async function verifyKey(){
+    const k = document.getElementById("unlockKey").value.trim();
+    const user = auth.currentUser;
+    if(!user){ document.getElementById("unlockMsg").innerText = "Not logged in."; return; }
+    if(!ACCESS_KEYS.hasOwnProperty(k)){ document.getElementById("unlockMsg").innerText = "Invalid key"; return; }
+
+    // set role & expiry on user profile in Firestore
+    const days = ACCESS_KEYS[k];
+    const expiry = days ? new Date(Date.now() + days*24*3600*1000).toISOString() : null;
+    const role = (k === "vamya" || k === "pthowner16") ? "admin" : "user";
+    await db.collection("users").doc(user.uid).set({ accessKey: k, expiry, role }, { merge: true });
+    document.getElementById("unlockMsg").innerText = "Access granted.";
+    // unlock UI
+    document.getElementById("home-screen").classList.remove("blur");
+    document.getElementById("search-screen").classList.remove("blur");
+    show("home");
+    loadSignals();
+  }
+
+  // ========== SIGNALS (listens to Firestore signals collection) ==========
+  function loadSignals(){
+    const el = document.getElementById("signalsList");
+    db.collection("signals").orderBy("timestamp","desc").limit(30).onSnapshot(snapshot=>{
+      el.innerHTML = "";
+      if(snapshot.empty){
+        el.innerHTML = "<p class='small muted'>No recent signals</p>";
+        return;
+      }
+      snapshot.forEach(doc=>{
+        const s = doc.data();
+        const cls = s.signal === "BUY" ? "buy" : s.signal === "SELL" ? "sell" : "hold";
+        const html = `<div class="signal ${cls}"><strong>${s.symbol}</strong> &nbsp; <span class="small muted">${s.signal} @ ${s.meta?.last_price ?? s.last_price}</span><div class="small muted">${new Date(s.meta?.timestamp || s.timestamp || Date.now()).toLocaleString()}</div></div>`;
+        el.insertAdjacentHTML('beforeend', html);
+      });
+    });
+  }
+
+  // ========== WATCHLIST (simple Firestore per-user list) ==========
+  async function addToWatchlist(){
+    const user = auth.currentUser; if(!user){ alert("Login first"); return; }
+    const val = document.getElementById("searchInput").value.trim();
+    if(!val) { alert("Enter symbol"); return; }
+    await db.collection("users").doc(user.uid).collection("watchlist").doc(val).set({ symbol: val, addedAt: new Date().toISOString() });
+    loadWatchlistFromFirestore();
+  }
+
+  async function loadWatchlistFromFirestore(){
+    const user = auth.currentUser; if(!user) return;
+    const el = document.getElementById("watchlist");
+    el.innerHTML = "";
+    const snap = await db.collection("users").doc(user.uid).collection("watchlist").orderBy("addedAt","desc").get();
+    snap.forEach(d=>{
+      const s = d.data().symbol;
+      const li = document.createElement("li");
+      li.className = "card small";
+      li.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><div>${s}</div><div><button onclick="removeFromWatchlist('${s}')" style="background:#ef4444;color:white;padding:6px 8px;border-radius:6px">Remove</button></div></div>`;
+      el.appendChild(li);
+    });
+  }
+
+  async function removeFromWatchlist(sym){
+    const user = auth.currentUser; if(!user) return;
+    await db.collection("users").doc(user.uid).collection("watchlist").doc(sym).delete();
+    loadWatchlistFromFirestore();
+  }
+
+  // ========== MANUAL REFRESH ANGELONE SYMBOLS ==========
+  async function refreshAngelSymbols(){
+    try {
+      document.getElementById("refreshMsg").innerText = "Refreshing…";
+      const res = await fetch(BACKEND + "/angelone/refreshSymbols", { method: "POST" });
+      const data = await res.json();
+      document.getElementById("refreshMsg").innerText = data.message || data.error || JSON.stringify(data);
+      alert(data.message || data.error || "Refresh done.");
+    } catch(e){
+      alert("Refresh error: " + e.message);
+    }
+  }
+
+  // ========== BROKER SAVE / LINK / BALANCE ==========
+  async function saveBroker(){
+    const user = auth.currentUser; if(!user){ alert("Login first"); return; }
+    const broker = document.getElementById("brokerSelect").value;
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const secretKey = document.getElementById("secretKey").value.trim();
+    // Save minimal broker info in user's doc
+    await db.collection("users").doc(user.uid).set({ broker: { name: broker, apiKey, secretKey } }, { merge: true });
+    alert("Broker saved to your profile. Use 'Check Linked Broker Balance' to verify.");
+  }
+
+  async function checkLinkedBrokerBalance(){
+    const user = auth.currentUser; if(!user){ alert("Login first"); return; }
+    const doc = await db.collection("users").doc(user.uid).get();
+    const b = doc.data()?.broker;
+    if(!b || !b.name){ alert("No broker saved"); return; }
+    try{
+      if(b.name === "zerodha"){
+        // Zerodha requires requestToken flow (user must open kite and provide request token)
+        alert("For Zerodha, use
