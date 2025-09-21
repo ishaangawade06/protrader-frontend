@@ -10,9 +10,9 @@
     .nav { position:fixed; bottom:0; width:100%; display:flex; justify-content:space-around; background:#111; padding:10px; }
     .nav button { background:none; border:none; color:#fff; font-size:18px; }
     .screen { padding:20px; }
-    input,button { margin:5px; padding:10px; border-radius:5px; border:none; }
-    input { width:90%; }
-    button { background:#3b82f6; color:white; }
+    input,button,select { margin:5px; padding:10px; border-radius:5px; border:none; }
+    input,select { width:90%; }
+    button { background:#3b82f6; color:white; cursor:pointer; }
   </style>
 </head>
 <body>
@@ -52,19 +52,35 @@
   <!-- 👤 Account -->
   <div id="account-screen" class="screen hidden">
     <h2>👤 Account</h2>
-    <h3>Connect Zerodha</h3>
+
+    <!-- Zerodha -->
+    <h3>Zerodha Login</h3>
     <input id="zerodhaApiKey" placeholder="API Key"><br>
     <input id="zerodhaClientId" placeholder="Client ID"><br>
     <input id="zerodhaPassword" type="password" placeholder="Password"><br>
     <input id="zerodhaTotp" placeholder="TOTP Secret"><br>
     <button onclick="zerodhaLogin()">Login Zerodha</button>
 
-    <h3>Connect AngelOne</h3>
+    <!-- AngelOne -->
+    <h3>AngelOne Login</h3>
     <input id="angelApiKey" placeholder="API Key"><br>
     <input id="angelClientId" placeholder="Client ID"><br>
     <input id="angelPassword" type="password" placeholder="Password"><br>
     <input id="angelTotp" placeholder="TOTP Secret"><br>
     <button onclick="angelLogin()">Login AngelOne</button>
+
+    <!-- Deposit / Withdraw -->
+    <h3>💳 Deposit / Withdraw</h3>
+    <select id="brokerSelect">
+      <option value="">Select Broker</option>
+      <option value="zerodha">Zerodha</option>
+      <option value="angelone">AngelOne</option>
+      <option value="binance">Binance</option>
+      <option value="exness">Exness</option>
+    </select><br>
+    <button onclick="deposit()">Deposit</button>
+    <button onclick="withdraw()">Withdraw</button>
+    <div id="txnHistory"></div>
   </div>
 
   <!-- Navigation -->
@@ -76,24 +92,26 @@
 
   <script>
     const BACKEND = "https://protrader-backend-sbus.onrender.com";
+    let txnHistory = [];
 
     function showScreen(id){
       document.querySelectorAll(".screen").forEach(s=>s.classList.add("hidden"));
       document.getElementById(id).classList.remove("hidden");
     }
 
+    // --- Auth ---
     async function signup(){
       const username = document.getElementById("username").value;
       if(!/^[a-z0-9]{1,12}$/.test(username)){
         alert("❌ Invalid username. Use a-z, 0-9, max 12 chars.");
         return;
       }
-      alert("✅ Signed up (Firebase auth code to be added here)");
+      alert("✅ Signed up (Firebase auth code pending)");
       showScreen("lock-screen");
     }
 
     async function login(){
-      alert("✅ Logged in (Firebase auth code to be added here)");
+      alert("✅ Logged in (Firebase auth code pending)");
       showScreen("lock-screen");
     }
 
@@ -113,6 +131,7 @@
       }
     }
 
+    // --- Broker logins ---
     async function zerodhaLogin(){
       const apiKey=document.getElementById("zerodhaApiKey").value;
       const clientId=document.getElementById("zerodhaClientId").value;
@@ -143,8 +162,44 @@
       else { alert("✅ AngelOne Login Success!"); console.log(data); }
     }
 
+    // --- Deposit / Withdraw ---
+    function deposit(){
+      const broker=document.getElementById("brokerSelect").value;
+      if(!broker){ alert("Select broker"); return; }
+      if(broker==="zerodha"){ window.open("https://console.zerodha.com/funds/add", "_blank"); }
+      else if(broker==="angelone"){ window.open("https://trade.angelone.in", "_blank"); }
+      else { alert("Deposit API integration coming soon for "+broker); }
+      logTxn("Deposit",broker);
+    }
+
+    function withdraw(){
+      const broker=document.getElementById("brokerSelect").value;
+      if(!broker){ alert("Select broker"); return; }
+      if(broker==="zerodha"){ window.open("https://console.zerodha.com/funds/withdraw", "_blank"); }
+      else if(broker==="angelone"){ window.open("https://trade.angelone.in", "_blank"); }
+      else { alert("Withdraw API integration coming soon for "+broker); }
+      logTxn("Withdraw",broker);
+    }
+
+    // --- Transaction History ---
+    function logTxn(type,broker){
+      const entry={type,broker,status:"processing",time:new Date().toLocaleString()};
+      txnHistory.unshift(entry);
+      renderHistory();
+      setTimeout(()=>{ entry.status="completed"; renderHistory(); },3000); // fake complete
+    }
+
+    function renderHistory(){
+      const el=document.getElementById("txnHistory");
+      el.innerHTML="<h4>Transaction History</h4>";
+      txnHistory.forEach(t=>{
+        el.innerHTML+=`<div>${t.time} - ${t.type} (${t.broker}) - <strong>${t.status}</strong></div>`;
+      });
+    }
+
+    // --- Demo trades ---
     function trade(type){ alert("Placed "+type+" order (demo)"); }
     function addToWatchlist(){ alert("Added to watchlist (demo)"); }
   </script>
 </body>
-      </html>
+    </html>
