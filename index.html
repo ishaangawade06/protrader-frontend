@@ -4,216 +4,147 @@
   <meta charset="UTF-8">
   <title>ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background:#0b1220; color:#e6eef8; }
-    .screen { display: none; padding: 20px; }
-    .active { display: block; }
-    nav { position: fixed; bottom: 0; left: 0; right: 0; background: #111827; display: flex; justify-content: space-around; padding: 10px 0; }
-    nav button { background: none; border: none; color: #9ca3af; font-size: 16px; }
-    nav button.active { color: #3b82f6; }
-    input, select { padding: 8px; border-radius: 6px; border: none; margin: 5px 0; width: 100%; }
-    button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; }
-    #brokerModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center; }
-    #brokerModal .content { background:#1f2937; padding:20px; border-radius:10px; width:90%; max-width:400px; color:white; }
-    #brokerList button { display:block; width:100%; margin-top:6px; background:#2563eb; padding:10px; border-radius:6px; text-align:center; color:white; }
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#0b1220; color:#fff; }
+    .hidden { display:none; }
+    .nav { position:fixed; bottom:0; width:100%; display:flex; justify-content:space-around; background:#111; padding:10px; }
+    .nav button { background:none; border:none; color:#fff; font-size:18px; }
+    .screen { padding:20px; }
+    input,button { margin:5px; padding:10px; border-radius:5px; border:none; }
+    input { width:90%; }
+    button { background:#3b82f6; color:white; }
   </style>
 </head>
 <body>
-
-  <!-- Login/Signup Screen -->
-  <div id="auth" class="screen active">
-    <h2>🔒 ProTraderHack Login</h2>
+  <!-- 🔒 Auth -->
+  <div id="auth-screen" class="screen">
+    <h2>🔑 Login / Signup</h2>
     <input id="email" type="email" placeholder="Email"><br>
     <input id="password" type="password" placeholder="Password"><br>
-    <input id="username" type="text" placeholder="Username (a–z, 0–9, max 12)"><br>
-    <button onclick="signup()" style="background:#3b82f6; color:white;">Sign Up</button>
-    <button onclick="login()" style="background:#10b981; color:white;">Login</button>
-    <button onclick="googleLogin()" style="background:#f59e0b; color:white;">Login with Google</button>
+    <input id="username" placeholder="Username (a-z0-9, max 12)"><br>
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Login</button>
   </div>
 
-  <!-- Home Screen -->
-  <div id="home" class="screen">
+  <!-- 🔓 Lock Screen -->
+  <div id="lock-screen" class="screen hidden">
+    <h2>🔒 Enter Access Key</h2>
+    <input id="accessKey" placeholder="Enter Key"><br>
+    <button onclick="unlock()">Unlock</button>
+  </div>
+
+  <!-- 🏠 Home -->
+  <div id="home-screen" class="screen hidden">
     <h2>🏠 Home</h2>
-    <p>Welcome to ProTraderHack!</p>
+    <p id="balance">Balance: --</p>
+    <button onclick="trade('BUY')">Buy</button>
+    <button onclick="trade('SELL')">Sell</button>
   </div>
 
-  <!-- Search Screen -->
-  <div id="search" class="screen">
+  <!-- 🔍 Search -->
+  <div id="search-screen" class="screen hidden">
     <h2>🔍 Search</h2>
-    <input type="text" placeholder="Search assets...">
+    <input id="searchPair" placeholder="Search Pair"><br>
+    <button onclick="addToWatchlist()">Add to Watchlist</button>
+    <div id="watchlist"></div>
   </div>
 
-  <!-- Admin Screen -->
-  <div id="admin" class="screen">
-    <h2>🛠️ Admin</h2>
-    <p>Only for admin users</p>
-  </div>
-
-  <!-- Account Screen -->
-  <div id="account" class="screen">
+  <!-- 👤 Account -->
+  <div id="account-screen" class="screen hidden">
     <h2>👤 Account</h2>
-    <select id="brokerSelect">
-      <option value="binance">Binance</option>
-      <option value="exness">Exness</option>
-      <option value="zerodha">Zerodha</option>
-      <option value="angelone">AngelOne</option>
-    </select>
-    <input id="apiKey" placeholder="API Key">
-    <input id="secretKey" placeholder="Secret Key">
-    <button onclick="connectBroker()" style="background:#3b82f6; color:white;">Connect Broker</button>
+    <h3>Connect Zerodha</h3>
+    <input id="zerodhaApiKey" placeholder="API Key"><br>
+    <input id="zerodhaClientId" placeholder="Client ID"><br>
+    <input id="zerodhaPassword" type="password" placeholder="Password"><br>
+    <input id="zerodhaTotp" placeholder="TOTP Secret"><br>
+    <button onclick="zerodhaLogin()">Login Zerodha</button>
 
-    <div style="margin-top:12px;">
-      <h3>Funds</h3>
-      <button onclick="depositFlow()" style="background:#10b981; color:white; margin-top:6px;">Deposit</button>
-      <button onclick="withdrawFlow()" style="background:#ef4444; color:white; margin-top:6px;">Withdraw</button>
-    </div>
-
-    <div style="margin-top:20px;">
-      <h3>Transaction History</h3>
-      <button onclick="loadTransactions()" style="background:#3b82f6; color:white; margin-top:6px;">Refresh History</button>
-      <ul id="txList" style="margin-top:10px; list-style:none; padding:0;"></ul>
-    </div>
+    <h3>Connect AngelOne</h3>
+    <input id="angelApiKey" placeholder="API Key"><br>
+    <input id="angelClientId" placeholder="Client ID"><br>
+    <input id="angelPassword" type="password" placeholder="Password"><br>
+    <input id="angelTotp" placeholder="TOTP Secret"><br>
+    <button onclick="angelLogin()">Login AngelOne</button>
   </div>
 
-  <!-- Bottom Nav -->
-  <nav>
-    <button onclick="showScreen('home')" id="nav-home">Home</button>
-    <button onclick="showScreen('search')" id="nav-search">Search</button>
-    <button onclick="showScreen('admin')" id="nav-admin">Admin</button>
-    <button onclick="showScreen('account')" id="nav-account">Account</button>
-  </nav>
-
-  <!-- Broker Selection Modal -->
-  <div id="brokerModal">
-    <div class="content">
-      <h3 id="brokerModalTitle"></h3>
-      <div id="brokerList"></div>
-      <button onclick="closeBrokerModal()" style="margin-top:15px; background:#374151; padding:8px 16px; border-radius:6px; color:white;">Cancel</button>
-    </div>
+  <!-- Navigation -->
+  <div class="nav hidden" id="bottom-nav">
+    <button onclick="showScreen('home-screen')">🏠</button>
+    <button onclick="showScreen('search-screen')">🔍</button>
+    <button onclick="showScreen('account-screen')">👤</button>
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
-      authDomain: "protraderhack-d67f0.firebaseapp.com",
-      projectId: "protraderhack-d67f0",
-      storageBucket: "protraderhack-d67f0.firebasestorage.app",
-      messagingSenderId: "1062485216321",
-      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
     const BACKEND = "https://protrader-backend-sbus.onrender.com";
 
     function showScreen(id){
-      document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-      document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
-      document.getElementById("nav-"+id).classList.add("active");
+      document.querySelectorAll(".screen").forEach(s=>s.classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
     }
 
-    // --- Auth ---
-    function signup(){
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+    async function signup(){
       const username = document.getElementById("username").value;
       if(!/^[a-z0-9]{1,12}$/.test(username)){
-        alert("Username must be lowercase letters/numbers, max 12 chars");
+        alert("❌ Invalid username. Use a-z, 0-9, max 12 chars.");
         return;
       }
-      auth.createUserWithEmailAndPassword(email,password)
-        .then(async (res)=>{
-          await db.collection("users").doc(res.user.uid).set({ username, brokers: [] });
-          alert("✅ Account created!");
-        })
-        .catch(err=>alert(err.message));
-    }
-    function login(){
-      const email=document.getElementById("email").value;
-      const password=document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email,password).catch(err=>alert(err.message));
-    }
-    function googleLogin(){
-      const provider=new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(err=>alert(err.message));
-    }
-    auth.onAuthStateChanged(user=>{
-      if(user){ showScreen("home"); } else { showScreen("auth"); }
-    });
-
-    // --- Brokers ---
-    async function connectBroker(){
-      const broker=document.getElementById("brokerSelect").value;
-      const apiKey=document.getElementById("apiKey").value;
-      const secretKey=document.getElementById("secretKey").value;
-      const user=auth.currentUser; if(!user)return;
-      await db.collection("users").doc(user.uid).set({
-        broker:{broker, apiKey, secretKey},
-        brokers: firebase.firestore.FieldValue.arrayUnion(broker)
-      },{merge:true});
-      alert("Broker connected: "+broker);
+      alert("✅ Signed up (Firebase auth code to be added here)");
+      showScreen("lock-screen");
     }
 
-    // --- Deposit / Withdraw ---
-    function closeBrokerModal(){
-      document.getElementById("brokerModal").style.display="none";
+    async function login(){
+      alert("✅ Logged in (Firebase auth code to be added here)");
+      showScreen("lock-screen");
     }
-    async function selectBroker(action){
-      const user=auth.currentUser; if(!user)return;
-      const doc=await db.collection("users").doc(user.uid).get();
-      const brokers=doc.data()?.brokers||[];
-      if(brokers.length===0){ alert("No broker connected yet!"); return null; }
-      const modal=document.getElementById("brokerModal");
-      const list=document.getElementById("brokerList");
-      const title=document.getElementById("brokerModalTitle");
-      list.innerHTML=""; title.innerText=`Select Broker for ${action}`;
-      brokers.forEach(b=>{
-        const btn=document.createElement("button");
-        btn.innerText=b.toUpperCase();
-        btn.onclick=()=>{ modal.style.display="none"; brokerAction(action,b); };
-        list.appendChild(btn);
+
+    async function unlock(){
+      const key = document.getElementById("accessKey").value;
+      const res = await fetch(BACKEND+"/validate_key", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({key})
       });
-      modal.style.display="flex";
-    }
-    async function brokerAction(action, broker){
-      const user=auth.currentUser; if(!user)return;
-      const doc=await db.collection("users").doc(user.uid).get();
-      const b=doc.data()?.broker;
-      if(action==="deposit"){
-        if(broker==="binance"||broker==="exness"){
-          const currency=prompt("Enter currency (e.g. USDT):");
-          const res=await fetch(BACKEND+"/binance/depositAddress",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({apiKey:b.apiKey,secretKey:b.secretKey,currency,exchange:broker})});
-          const data=await res.json();
-          alert(data.address?`Deposit Address: ${data.address}`:data.error);
-        } else if(broker==="zerodha"){ window.open("https://kite.zerodha.com/funds","_blank"); }
-        else if(broker==="angelone"){ window.open("https://trade.angelbroking.com/#/funds","_blank"); }
-      }
-      if(action==="withdraw"){
-        if(broker==="binance"||broker==="exness"){
-          const currency=prompt("Currency (e.g. USDT):");
-          const amount=prompt("Amount to withdraw:");
-          const address=prompt("Destination address:");
-          const res=await fetch(BACKEND+"/binance/withdraw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({apiKey=b.apiKey,secretKey=b.secretKey,currency,amount,address,exchange:broker})});
-          const data=await res.json();
-          alert(data.id?"✅ Withdrawal initiated":"❌ "+(data.error||JSON.stringify(data)));
-        } else if(broker==="zerodha"){ window.open("https://kite.zerodha.com/funds","_blank"); }
-        else if(broker==="angelone"){ window.open("https://trade.angelbroking.com/#/funds","_blank"); }
+      const data = await res.json();
+      if(data.valid){
+        alert("✅ Key accepted!");
+        showScreen("home-screen");
+        document.getElementById("bottom-nav").classList.remove("hidden");
+      } else {
+        alert("❌ Invalid/Expired key");
       }
     }
-    function depositFlow(){ selectBroker("deposit"); }
-    function withdrawFlow(){ selectBroker("withdraw"); }
 
-    // --- Transaction History ---
-    async function loadTransactions(){
-      const broker = await selectBroker("history");
-      if(!broker) return;
-      if(broker==="binance"||broker==="exness"){
-        const user=auth.currentUser; if(!user)return;
-        const doc=await db.collection("users
+    async function zerodhaLogin(){
+      const apiKey=document.getElementById("zerodhaApiKey").value;
+      const clientId=document.getElementById("zerodhaClientId").value;
+      const password=document.getElementById("zerodhaPassword").value;
+      const totpSecret=document.getElementById("zerodhaTotp").value;
+
+      const res=await fetch(BACKEND+"/zerodha/login",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({apiKey,clientId,password,totpSecret})
+      });
+      const data=await res.json();
+      if(data.error){ alert("❌ "+data.error); }
+      else { window.open(data.login_url,"_blank"); }
+    }
+
+    async function angelLogin(){
+      const apiKey=document.getElementById("angelApiKey").value;
+      const clientId=document.getElementById("angelClientId").value;
+      const password=document.getElementById("angelPassword").value;
+      const totpSecret=document.getElementById("angelTotp").value;
+
+      const res=await fetch(BACKEND+"/angelone/login",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({apiKey,clientId,password,totpSecret})
+      });
+      const data=await res.json();
+      if(data.error){ alert("❌ "+data.error); }
+      else { alert("✅ AngelOne Login Success!"); console.log(data); }
+    }
+
+    function trade(type){ alert("Placed "+type+" order (demo)"); }
+    function addToWatchlist(){ alert("Added to watchlist (demo)"); }
+  </script>
+</body>
+      </html>
