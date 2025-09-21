@@ -73,6 +73,12 @@
       <button onclick="depositFlow()" style="background:#10b981; color:white; margin-top:6px;">Deposit</button>
       <button onclick="withdrawFlow()" style="background:#ef4444; color:white; margin-top:6px;">Withdraw</button>
     </div>
+
+    <div style="margin-top:20px;">
+      <h3>Transaction History</h3>
+      <button onclick="loadTransactions()" style="background:#3b82f6; color:white; margin-top:6px;">Refresh History</button>
+      <ul id="txList" style="margin-top:10px; list-style:none; padding:0;"></ul>
+    </div>
   </div>
 
   <!-- Bottom Nav -->
@@ -194,7 +200,7 @@
           const currency=prompt("Currency (e.g. USDT):");
           const amount=prompt("Amount to withdraw:");
           const address=prompt("Destination address:");
-          const res=await fetch(BACKEND+"/binance/withdraw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({apiKey:b.apiKey,secretKey:b.secretKey,currency,amount,address,exchange:broker})});
+          const res=await fetch(BACKEND+"/binance/withdraw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({apiKey=b.apiKey,secretKey=b.secretKey,currency,amount,address,exchange:broker})});
           const data=await res.json();
           alert(data.id?"✅ Withdrawal initiated":"❌ "+(data.error||JSON.stringify(data)));
         } else if(broker==="zerodha"){ window.open("https://kite.zerodha.com/funds","_blank"); }
@@ -203,6 +209,11 @@
     }
     function depositFlow(){ selectBroker("deposit"); }
     function withdrawFlow(){ selectBroker("withdraw"); }
-  </script>
-</body>
-  </html>
+
+    // --- Transaction History ---
+    async function loadTransactions(){
+      const broker = await selectBroker("history");
+      if(!broker) return;
+      if(broker==="binance"||broker==="exness"){
+        const user=auth.currentUser; if(!user)return;
+        const doc=await db.collection("users
