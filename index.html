@@ -4,242 +4,114 @@
   <meta charset="UTF-8">
   <title>ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#0b1220; color:#fff; }
-    .hidden { display:none; }
-    .nav { position:fixed; bottom:0; width:100%; display:flex; justify-content:space-around; background:#111; padding:10px; }
-    .nav button { background:none; border:none; color:#fff; font-size:18px; }
-    .screen { padding:20px; }
-    input,button,select { margin:5px; padding:10px; border-radius:5px; border:none; }
-    input,select { width:90%; }
-    button { background:#3b82f6; color:white; cursor:pointer; }
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#0b1220; color:white; }
+    .center { text-align:center; margin-top:100px; }
+    #home-screen,#search-screen,#account-screen,#admin-screen { display:none; padding:20px; }
+    nav { position:fixed; bottom:0; width:100%; display:flex; background:#111827; }
+    nav button { flex:1; padding:14px; border:0; background:none; color:white; font-size:16px; }
+    .blur { filter: blur(8px); }
   </style>
 </head>
 <body>
-  <!-- 🔒 Auth -->
-  <div id="auth-screen" class="screen">
-    <h2>🔑 Login / Signup</h2>
-    <input id="email" type="email" placeholder="Email"><br>
-    <input id="password" type="password" placeholder="Password"><br>
-    <input id="username" placeholder="Username (a-z0-9, max 12)"><br>
+  <!-- Auth -->
+  <div id="auth-screen" class="center">
+    <h2>🔒 Login to ProTraderHack</h2>
+    <input id="email" type="email" placeholder="Email"><br><br>
+    <input id="password" type="password" placeholder="Password"><br><br>
     <button onclick="signup()">Sign Up</button>
     <button onclick="login()">Login</button>
   </div>
 
-  <!-- 🔓 Lock Screen -->
-  <div id="lock-screen" class="screen hidden">
-    <h2>🔒 Enter Access Key</h2>
-    <input id="accessKey" placeholder="Enter Key"><br>
-    <button onclick="unlock()">Unlock</button>
+  <!-- Key Gate -->
+  <div id="key-gate" class="center" style="display:none;">
+    <h2>🔑 Enter your key</h2>
+    <input id="userKey" placeholder="Enter key"><br><br>
+    <button onclick="validateKey()">Unlock</button>
   </div>
 
-  <!-- 🏠 Home -->
-  <div id="home-screen" class="screen hidden">
+  <!-- Home -->
+  <div id="home-screen">
     <h2>🏠 Home</h2>
-    <p id="balance">Balance: --</p>
-    <button onclick="trade('BUY')">Buy</button>
-    <button onclick="trade('SELL')">Sell</button>
+    <div id="signals"></div>
   </div>
 
-  <!-- 🔍 Search -->
-  <div id="search-screen" class="screen hidden">
-    <h2>🔍 Search</h2>
-    <input id="searchPair" placeholder="Search Pair"><br>
-    <button onclick="addToWatchlist()">Add to Watchlist</button>
-    <div id="watchlist"></div>
+  <!-- Search -->
+  <div id="search-screen">
+    <h2>🔎 Search</h2>
+    <input id="searchInput" placeholder="Search pairs">
+    <div id="searchResults"></div>
   </div>
 
-  <!-- 🔔 Notifications -->
-  <div id="notif-screen" class="screen hidden">
-    <h2>🔔 Notifications</h2>
-    <ul id="notifList"></ul>
-  </div>
-
-  <!-- 👤 Account -->
-  <div id="account-screen" class="screen hidden">
+  <!-- Account -->
+  <div id="account-screen">
     <h2>👤 Account</h2>
-
-    <!-- Zerodha -->
-    <h3>Zerodha Login</h3>
-    <input id="zerodhaApiKey" placeholder="API Key"><br>
-    <input id="zerodhaClientId" placeholder="Client ID"><br>
-    <input id="zerodhaPassword" type="password" placeholder="Password"><br>
-    <input id="zerodhaTotp" placeholder="TOTP Secret"><br>
-    <button onclick="zerodhaLogin()">Login Zerodha</button>
-
-    <!-- AngelOne -->
-    <h3>AngelOne Login</h3>
-    <input id="angelApiKey" placeholder="API Key"><br>
-    <input id="angelClientId" placeholder="Client ID"><br>
-    <input id="angelPassword" type="password" placeholder="Password"><br>
-    <input id="angelTotp" placeholder="TOTP Secret"><br>
-    <button onclick="angelLogin()">Login AngelOne</button>
-
-    <!-- Deposit / Withdraw -->
-    <h3>💳 Deposit / Withdraw</h3>
-    <select id="brokerSelect">
-      <option value="">Select Broker</option>
-      <option value="zerodha">Zerodha</option>
-      <option value="angelone">AngelOne</option>
-      <option value="binance">Binance</option>
-      <option value="exness">Exness</option>
-    </select><br>
     <button onclick="deposit()">Deposit</button>
     <button onclick="withdraw()">Withdraw</button>
     <div id="txnHistory"></div>
   </div>
 
-  <!-- Navigation -->
-  <div class="nav hidden" id="bottom-nav">
-    <button onclick="showScreen('home-screen')">🏠</button>
-    <button onclick="showScreen('search-screen')">🔍</button>
-    <button onclick="showScreen('notif-screen')">🔔</button>
-    <button onclick="showScreen('account-screen')">👤</button>
+  <!-- Admin -->
+  <div id="admin-screen">
+    <h2>⚙️ Admin</h2>
+    <p>Restricted</p>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <nav>
+    <button onclick="show('home-screen')">Home</button>
+    <button onclick="show('search-screen')">Search</button>
+    <button onclick="show('account-screen')">Account</button>
+    <button onclick="show('admin-screen')">Admin</button>
+  </nav>
 
   <script>
-    const BACKEND = "https://protrader-backend-sbus.onrender.com";
-    let txnHistory = [];
-    let activeKey = null;
+    const BACKEND="https://protrader-backend-sbus.onrender.com";
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
       projectId: "protraderhack-d67f0",
+      storageBucket: "protraderhack-d67f0.firebasestorage.app",
+      messagingSenderId: "1062485216321",
+      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const auth=firebase.auth(); const db=firebase.firestore();
 
-    function showScreen(id){
-      document.querySelectorAll(".screen").forEach(s=>s.classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
+    function signup(){ auth.createUserWithEmailAndPassword(email.value,password.value).catch(e=>alert(e.message)); }
+    function login(){ auth.signInWithEmailAndPassword(email.value,password.value).catch(e=>alert(e.message)); }
+    auth.onAuthStateChanged(u=>{ if(u){ document.getElementById("auth-screen").style.display="none"; document.getElementById("key-gate").style.display="block"; }});
+
+    async function validateKey(){
+      const res=await fetch(BACKEND+"/validate_key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:document.getElementById("userKey").value})});
+      const d=await res.json();
+      if(d.valid){ document.getElementById("key-gate").style.display="none"; show("home-screen"); listenSignals(); listenNotifications(); }
+      else{ alert("Key invalid: "+d.reason); }
     }
 
-    // --- Auth ---
-    async function signup(){
-      const username = document.getElementById("username").value;
-      if(!/^[a-z0-9]{1,12}$/.test(username)){
-        alert("❌ Invalid username. Use a-z, 0-9, max 12 chars.");
-        return;
-      }
-      alert("✅ Signed up (Firebase auth code pending)");
-      showScreen("lock-screen");
+    function show(id){ ["home-screen","search-screen","account-screen","admin-screen"].forEach(x=>document.getElementById(x).style.display="none"); document.getElementById(id).style.display="block"; }
+
+    function deposit(){ logTxn("deposit"); }
+    function withdraw(){ logTxn("withdraw"); }
+    async function logTxn(type){
+      const entry={user:auth.currentUser.email, broker:"demo", type};
+      await fetch(BACKEND+"/transaction",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)});
+      document.getElementById("txnHistory").innerHTML+="<div>"+type+" logged</div>";
     }
 
-    async function login(){
-      alert("✅ Logged in (Firebase auth code pending)");
-      showScreen("lock-screen");
-    }
-
-    async function unlock(){
-      const key = document.getElementById("accessKey").value;
-      const res = await fetch(BACKEND+"/validate_key", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({key})
-      });
-      const data = await res.json();
-      if(data.valid){
-        activeKey = key;
-        alert("✅ Key accepted!");
-        showScreen("home-screen");
-        document.getElementById("bottom-nav").classList.remove("hidden");
-        listenForSignals();
-      } else {
-        alert("❌ Invalid/Expired key");
-      }
-    }
-
-    // --- Signals (Notifications) ---
-    function listenForSignals(){
-      db.collection("notifications").where("key","==",activeKey)
-        .orderBy("timestamp","desc").limit(20)
-        .onSnapshot(snap=>{
-          const el=document.getElementById("notifList");
-          snap.forEach(d=>{
-            const n=d.data();
-            const msg=`${n.timestamp} — ${n.signal.signal} on ${n.signal.meta.symbol} @ ${n.signal.meta.last_price}`;
-            const li=document.createElement("li");
-            li.innerText=msg;
-            el.prepend(li);
-            alert("📢 New Signal: "+msg);
-          });
-        });
-    }
-
-    // --- Broker logins ---
-    async function zerodhaLogin(){
-      const apiKey=document.getElementById("zerodhaApiKey").value;
-      const clientId=document.getElementById("zerodhaClientId").value;
-      const password=document.getElementById("zerodhaPassword").value;
-      const totpSecret=document.getElementById("zerodhaTotp").value;
-      const res=await fetch(BACKEND+"/zerodha/login",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({apiKey,clientId,password,totpSecret})
-      });
-      const data=await res.json();
-      if(data.error){ alert("❌ "+data.error); }
-      else { window.open(data.login_url,"_blank"); }
-    }
-
-    async function angelLogin(){
-      const apiKey=document.getElementById("angelApiKey").value;
-      const clientId=document.getElementById("angelClientId").value;
-      const password=document.getElementById("angelPassword").value;
-      const totpSecret=document.getElementById("angelTotp").value;
-      const res=await fetch(BACKEND+"/angelone/login",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({apiKey,clientId,password,totpSecret})
-      });
-      const data=await res.json();
-      if(data.error){ alert("❌ "+data.error); }
-      else { alert("✅ AngelOne Login Success!"); console.log(data); }
-    }
-
-    // --- Deposit / Withdraw ---
-    function deposit(){
-      const broker=document.getElementById("brokerSelect").value;
-      if(!broker){ alert("Select broker"); return; }
-      if(broker==="zerodha"){ window.open("https://console.zerodha.com/funds/add", "_blank"); }
-      else if(broker==="angelone"){ window.open("https://trade.angelone.in", "_blank"); }
-      else { alert("Deposit API integration coming soon for "+broker); }
-      logTxn("Deposit",broker);
-    }
-
-    function withdraw(){
-      const broker=document.getElementById("brokerSelect").value;
-      if(!broker){ alert("Select broker"); return; }
-      if(broker==="zerodha"){ window.open("https://console.zerodha.com/funds/withdraw", "_blank"); }
-      else if(broker==="angelone"){ window.open("https://trade.angelone.in", "_blank"); }
-      else { alert("Withdraw API integration coming soon for "+broker); }
-      logTxn("Withdraw",broker);
-    }
-
-    // --- Transaction History ---
-    async function logTxn(type,broker){
-      const user=document.getElementById("email").value||"guest";
-      const entry={type,broker,status:"processing",time:new Date().toLocaleString()};
-      txnHistory.unshift(entry);
-      renderHistory();
-      await fetch(BACKEND+"/transaction",{
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({user, broker, type})
-      });
-      setTimeout(()=>{ entry.status="completed"; renderHistory(); },3000);
-    }
-
-    function renderHistory(){
-      const el=document.getElementById("txnHistory");
-      el.innerHTML="<h4>Transaction History</h4>";
-      txnHistory.forEach(t=>{
-        el.innerHTML+=`<div>${t.time} - ${t.type} (${t.broker}) - <strong>${t.status}</strong></div>`;
+    function listenSignals(){
+      db.collection("signals").orderBy("timestamp","desc").limit(10).onSnapshot(snap=>{
+        let html=""; snap.forEach(d=>{const s=d.data(); html+=`<div>${s.symbol} ${s.signal} @ ${s.last_price||"-"}</div>`;}); document.getElementById("signals").innerHTML=html;
       });
     }
 
-    // --- Demo trades ---
-    function trade(type){ alert("Placed "+type+" order (demo)"); }
-    function addToWatchlist(){ alert("Added to watchlist (demo)"); }
+    function listenNotifications(){
+      db.collection("notifications").orderBy("timestamp","desc").limit(5).onSnapshot(snap=>{
+        snap.forEach(d=>{const n=d.data(); alert("🔔 "+n.symbol+" → "+n.signal+" ("+n.message+")");});
+      });
+    }
   </script>
 </body>
-  </html>
+</html>
