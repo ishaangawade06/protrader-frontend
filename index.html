@@ -49,6 +49,12 @@
     <div id="watchlist"></div>
   </div>
 
+  <!-- 🔔 Notifications -->
+  <div id="notif-screen" class="screen hidden">
+    <h2>🔔 Notifications</h2>
+    <ul id="notifList"></ul>
+  </div>
+
   <!-- 👤 Account -->
   <div id="account-screen" class="screen hidden">
     <h2>👤 Account</h2>
@@ -87,12 +93,24 @@
   <div class="nav hidden" id="bottom-nav">
     <button onclick="showScreen('home-screen')">🏠</button>
     <button onclick="showScreen('search-screen')">🔍</button>
+    <button onclick="showScreen('notif-screen')">🔔</button>
     <button onclick="showScreen('account-screen')">👤</button>
   </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script>
     const BACKEND = "https://protrader-backend-sbus.onrender.com";
     let txnHistory = [];
+    let activeKey = null;
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+      authDomain: "protraderhack-d67f0.firebaseapp.com",
+      projectId: "protraderhack-d67f0",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
     function showScreen(id){
       document.querySelectorAll(".screen").forEach(s=>s.classList.add("hidden"));
@@ -123,12 +141,31 @@
       });
       const data = await res.json();
       if(data.valid){
+        activeKey = key;
         alert("✅ Key accepted!");
         showScreen("home-screen");
         document.getElementById("bottom-nav").classList.remove("hidden");
+        listenForSignals();
       } else {
         alert("❌ Invalid/Expired key");
       }
+    }
+
+    // --- Signals (Notifications) ---
+    function listenForSignals(){
+      db.collection("notifications").where("key","==",activeKey)
+        .orderBy("timestamp","desc").limit(20)
+        .onSnapshot(snap=>{
+          const el=document.getElementById("notifList");
+          snap.forEach(d=>{
+            const n=d.data();
+            const msg=`${n.timestamp} — ${n.signal.signal} on ${n.signal.meta.symbol} @ ${n.signal.meta.last_price}`;
+            const li=document.createElement("li");
+            li.innerText=msg;
+            el.prepend(li);
+            alert("📢 New Signal: "+msg);
+          });
+        });
     }
 
     // --- Broker logins ---
@@ -137,7 +174,6 @@
       const clientId=document.getElementById("zerodhaClientId").value;
       const password=document.getElementById("zerodhaPassword").value;
       const totpSecret=document.getElementById("zerodhaTotp").value;
-
       const res=await fetch(BACKEND+"/zerodha/login",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({apiKey,clientId,password,totpSecret})
@@ -152,7 +188,6 @@
       const clientId=document.getElementById("angelClientId").value;
       const password=document.getElementById("angelPassword").value;
       const totpSecret=document.getElementById("angelTotp").value;
-
       const res=await fetch(BACKEND+"/angelone/login",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({apiKey,clientId,password,totpSecret})
@@ -182,11 +217,16 @@
     }
 
     // --- Transaction History ---
-    function logTxn(type,broker){
+    async function logTxn(type,broker){
+      const user=document.getElementById("email").value||"guest";
       const entry={type,broker,status:"processing",time:new Date().toLocaleString()};
       txnHistory.unshift(entry);
       renderHistory();
-      setTimeout(()=>{ entry.status="completed"; renderHistory(); },3000); // fake complete
+      await fetch(BACKEND+"/transaction",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({user, broker, type})
+      });
+      setTimeout(()=>{ entry.status="completed"; renderHistory(); },3000);
     }
 
     function renderHistory(){
@@ -202,4 +242,4 @@
     function addToWatchlist(){ alert("Added to watchlist (demo)"); }
   </script>
 </body>
-    </html>
+</html>
