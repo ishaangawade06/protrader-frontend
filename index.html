@@ -3,139 +3,128 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PTH — ProTraderHack</title>
+  <title>ProTraderHack</title>
 
-  <!-- lightweight-charts for candlestick charts -->
+  <!-- Chart lib -->
   <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
   <style>
-    body { background:#071127; color:#e6eef8; font-family: Inter, Arial, sans-serif; margin:0; padding:0; }
-    .container { max-width:900px; margin:0 auto; padding:12px; }
-    .card { background:#0f1724; padding:14px; border-radius:10px; margin-bottom:12px; }
-    input,select,button { padding:10px; border-radius:8px; border:0; }
-    input,select { width:100%; margin:6px 0; background:#0b1320; color:#e6eef8; }
-    button.primary { background:#2563eb; color:white; }
-    nav { position:fixed; left:0; right:0; bottom:0; background:#0b1220; display:flex; gap:8px; padding:8px; justify-content:space-around; border-top:1px solid rgba(255,255,255,0.03); }
-    nav button { flex:1; background:none; border:0; color:#9aa6b2; padding:8px; font-size:16px; }
-    nav button.active { color:#60a5fa; }
-    #chart { height:320px; }
-    ul.list { list-style:none; padding:0; margin:0; max-height:200px; overflow:auto; }
-    li.item { padding:8px; border-bottom:1px solid rgba(255,255,255,0.02); display:flex; justify-content:space-between; }
-    .muted { color:#9aa6b2; font-size:13px; }
+    body{font-family:Inter,Arial;background:#071127;color:#e6eef8;margin:0;padding:12px;}
+    .card{background:#0f1724;padding:12px;border-radius:10px;margin-bottom:12px;}
+    input,select,button{padding:10px;border-radius:8px;border:0;background:#0b1320;color:#e6eef8;width:100%;margin:6px 0;}
+    nav{position:fixed;left:0;right:0;bottom:0;background:#0b1220;display:flex;gap:6px;padding:8px;border-top:1px solid rgba(255,255,255,0.03);}
+    nav button{flex:1;background:none;border:0;color:#9aa6b2;padding:8px;font-size:15px;}
+    nav button.active{color:#60a5fa;}
+    #chart{height:320px;}
+    .small{font-size:13px;color:#9aa6b2;}
+    ul.list{list-style:none;padding:0;margin:0;max-height:260px;overflow:auto;}
+    li.item{padding:8px;border-bottom:1px solid rgba(255,255,255,0.02);display:flex;justify-content:space-between;}
+    #introVideo{width:100%;border-radius:10px;}
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="app">
 
-    <!-- AUTH -->
-    <div id="auth" class="card" style="display:block;">
-      <h2>🔑 ProTraderHack — Login / Signup</h2>
+    <!-- Intro video card (plays once) -->
+    <div id="intro" class="card" style="display:none;">
+      <video id="introVideo" controls>
+        <source src="VID-20250904-WA0075.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="skipIntro" class="">Skip</button>
+      </div>
+    </div>
+
+    <!-- Auth -->
+    <div id="auth" class="card">
+      <h2>🔒 Login / Sign up</h2>
       <input id="email" placeholder="Email" type="email">
       <input id="password" placeholder="Password" type="password">
-      <input id="username" placeholder="Username (a-z0-9 max12)">
-
-      <div style="display:flex; gap:8px;">
-        <button class="primary" onclick="signup()">Sign Up</button>
+      <input id="username" placeholder="Username (a-z0-9, max12)">
+      <div style="display:flex;gap:8px;">
+        <button onclick="signup()">Sign Up</button>
         <button onclick="login()">Login</button>
       </div>
+      <p class="small">Google login not included here — add later if you want.</p>
     </div>
 
-    <!-- KEY GATE -->
+    <!-- Key gate -->
     <div id="keyGate" class="card" style="display:none;">
-      <h3>🔒 Unlock PTH</h3>
-      <p class="muted">Enter your access key (7d/15d/30d/50d/permanent keys)</p>
-      <input id="accessKey" placeholder="Enter access key">
-      <button class="primary" onclick="unlock()">Unlock</button>
+      <h3>🔑 Enter your key to unlock</h3>
+      <input id="userKey" placeholder="Enter key (e.g. pth7)">
+      <button onclick="validateKey()">Unlock</button>
+      <p class="small">Keys: pth7 (7d), key15 (15d), ishaan30 (30d), splkey50 (50d), ishaan (permanent)</p>
     </div>
 
-    <!-- HOME -->
+    <!-- Home (charts + signals) -->
     <div id="home" style="display:none;">
       <div class="card">
-        <h3>🏠 Home — Watchlist & Chart</h3>
-        <div style="display:flex; gap:8px; margin-bottom:8px;">
-          <input id="chartSymbol" placeholder="Symbol e.g. BTC/USDT" value="BTC/USDT">
-          <select id="chartTf">
-            <option value="1m">1m</option>
-            <option value="5m">5m</option>
-            <option value="15m">15m</option>
-            <option value="1h">1h</option>
-            <option value="1d">1d</option>
-          </select>
-          <button onclick="loadChart()" class="primary">Load Chart</button>
+        <h3>🏠 Home</h3>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input id="chartSymbol" value="BTC/USDT" placeholder="Symbol">
+          <select id="chartTf"><option>1m</option><option>5m</option><option>15m</option><option>1h</option><option>1d</option></select>
+          <button onclick="loadChart()">Load</button>
         </div>
-        <div id="chart" class="card" style="padding:0;"></div>
+        <div id="chart" class="card"></div>
       </div>
 
       <div class="card">
-        <h4>Signals (recent)</h4>
+        <h4>Signals</h4>
         <ul id="signalsList" class="list"></ul>
       </div>
     </div>
 
-    <!-- SEARCH -->
+    <!-- Search -->
     <div id="search" class="card" style="display:none;">
-      <h3>🔍 Search & Add to Watchlist</h3>
-      <input id="searchInput" placeholder="Search symbol e.g. ETH/USDT or INFY-NSE">
-      <div style="display:flex; gap:8px;">
-        <button onclick="addToWatchlist()" class="primary">Add</button>
-      </div>
-      <h4 class="muted">Watchlist</h4>
+      <h3>🔎 Search & Watchlist</h3>
+      <input id="searchInput" placeholder="Symbol e.g. BTC/USDT or INFY-NSE">
+      <button onclick="addToWatchlist()">Add to watchlist</button>
+      <h4 class="small">Watchlist</h4>
       <ul id="watchlist" class="list"></ul>
     </div>
 
-    <!-- NOTIFICATIONS -->
+    <!-- Notifications -->
     <div id="notifications" class="card" style="display:none;">
       <h3>🔔 Notifications</h3>
       <ul id="notifList" class="list"></ul>
     </div>
 
-    <!-- ACCOUNT -->
+    <!-- Account -->
     <div id="account" class="card" style="display:none;">
       <h3>👤 Account</h3>
-      <p class="muted">Connect broker (API key & secret) — stored in Firestore (encrypted in future)</p>
-      <select id="brokerSelect">
-        <option value="binance">Binance</option>
-        <option value="exness">Exness</option>
-        <option value="zerodha">Zerodha</option>
-        <option value="angelone">AngelOne</option>
-      </select>
-      <input id="brokerApiKey" placeholder="API Key">
-      <input id="brokerSecret" placeholder="Secret Key">
-      <div style="display:flex; gap:8px;">
-        <button onclick="connectBroker()" class="primary">Connect Broker</button>
-      </div>
+      <p class="small">Username & broker connection</p>
+      <input id="brokerSelect" list="brokers" placeholder="Select broker (binance/exness/zerodha/angelone)">
+      <datalist id="brokers"><option>binance</option><option>exness</option><option>zerodha</option><option>angelone</option></datalist>
+      <input id="brokerApiKey" placeholder="Broker API Key">
+      <input id="brokerSecret" placeholder="Broker Secret">
+      <button onclick="connectBroker()">Connect Broker</button>
 
-      <hr style="margin:12px 0; border-color:rgba(255,255,255,0.03)">
+      <hr style="margin:8px 0;border-color:rgba(255,255,255,0.03)">
 
       <h4>Deposit / Withdraw</h4>
       <input id="amount" placeholder="Amount">
-      <div style="display:flex; gap:8px;">
-        <button class="primary" onclick="deposit()">Deposit</button>
+      <div style="display:flex;gap:8px;">
+        <button onclick="deposit()">Deposit</button>
         <button onclick="withdraw()">Withdraw</button>
       </div>
 
-      <h4 style="margin-top:12px;">Transactions</h4>
+      <h4 style="margin-top:8px;">Transactions</h4>
       <ul id="txList" class="list"></ul>
     </div>
 
-    <!-- ADMIN (owner keys required) -->
+    <!-- Admin (only visible when admin role) -->
     <div id="admin" class="card" style="display:none;">
       <h3>⚙️ Admin</h3>
-      <p class="muted">Broadcast notifications to all valid users</p>
-      <input id="adminMessage" placeholder="Message (optional)">
+      <input id="adminMessage" placeholder="Message">
       <input id="adminSymbol" placeholder="Symbol">
-      <select id="adminSignal">
-        <option value="INFO">INFO</option>
-        <option value="BUY">BUY</option>
-        <option value="SELL">SELL</option>
-      </select>
+      <select id="adminSignal"><option>INFO</option><option>BUY</option><option>SELL</option></select>
       <input id="adminPrice" placeholder="Price">
-      <button class="primary" onclick="broadcast()">Broadcast</button>
+      <button onclick="broadcast()">Broadcast</button>
     </div>
 
   </div>
 
-  <!-- bottom nav -->
   <nav>
     <button id="navHome" class="active" onclick="nav('home')">Home</button>
     <button id="navSearch" onclick="nav('search')">Search</button>
@@ -151,7 +140,6 @@
 
   <script>
     const BACKEND = (location.hostname.includes('localhost') ? 'http://localhost:5000' : 'https://protrader-backend-sbus.onrender.com');
-    const ADMIN_SECRET = "supersecret123"; // same as backend — store safely in production
 
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
@@ -162,34 +150,50 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // state
-    let activeKey = null;
-    let watchlist = [];
+    // --- session for intro video (play once per session) ---
+    if (!sessionStorage.getItem('intro_played')) {
+      document.getElementById('intro').style.display = 'block';
+      document.getElementById('auth').style.display = 'none';
+      document.getElementById('skipIntro').onclick = () => {
+        document.getElementById('intro').style.display = 'none';
+        document.getElementById('auth').style.display = 'block';
+        sessionStorage.setItem('intro_played', '1');
+      };
+      // if video ends
+      document.getElementById('introVideo').onended = () => {
+        document.getElementById('intro').style.display = 'none';
+        document.getElementById('auth').style.display = 'block';
+        sessionStorage.setItem('intro_played', '1');
+      };
+    } else {
+      document.getElementById('intro').style.display = 'none';
+    }
 
-    // UI helpers
-    function showSection(id) {
-      ['home','search','notifications','account','admin'].forEach(k=>{
-        document.getElementById(k).style.display = (k === id) ? 'block' : 'none';
+    // UI navigation
+    function show(section) {
+      ['home','search','notifications','account','admin'].forEach(s => {
+        document.getElementById(s).style.display = (s === section) ? 'block' : 'none';
       });
       document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-      const btn = { home:'navHome', search:'navSearch', notifications:'navNotif', account:'navAccount', admin:'navAdmin' }[id];
-      if(btn) document.getElementById(btn).classList.add('active');
+      const map = {home:'navHome', search:'navSearch', notifications:'navNotif', account:'navAccount', admin:'navAdmin'};
+      document.getElementById(map[section]).classList.add('active');
     }
-    function nav(section){ showSection(section); }
+    function nav(section){ show(section); }
 
-    // Auth
+    // --- auth & username rules ---
     async function signup(){
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const username = document.getElementById('username').value;
       if(!/^[a-z0-9]{1,12}$/.test(username)){
-        alert('Username must be lowercase letters and numbers, max 12');
-        return;
+        return alert('Username must be lowercase letters/numbers and max 12 characters');
       }
       try {
-        await auth.createUserWithEmailAndPassword(email,password);
-        const user = auth.currentUser;
-        if(user) await db.collection('users').doc(user.uid).set({ username, created_at: new Date().toISOString() });
+        await auth.createUserWithEmailAndPassword(email, password);
+        const u = auth.currentUser;
+        if(u){
+          await db.collection('users').doc(u.uid).set({ username, created_at: new Date().toISOString() });
+        }
         alert('Account created');
       } catch(e){ alert(e.message); }
     }
@@ -200,188 +204,195 @@
         await auth.signInWithEmailAndPassword(email,password);
       } catch(e){ alert(e.message); }
     }
-    auth.onAuthStateChanged(u=>{
-      if(u){
+    function signout(){ auth.signOut(); }
+
+    auth.onAuthStateChanged(user=>{
+      if(user){
         document.getElementById('auth').style.display = 'none';
         document.getElementById('keyGate').style.display = 'block';
       } else {
         document.getElementById('auth').style.display = 'block';
         document.getElementById('keyGate').style.display = 'none';
-        showSection('home'); // default
+        show('home');
       }
     });
 
-    // Unlock with key
-    async function unlock(){
-      const key = document.getElementById('accessKey').value.trim();
-      if(!key){ alert('Enter key'); return; }
-      const res = await fetch(BACKEND + '/validate_key', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key }) });
-      const data = await res.json();
-      if(data.valid){
-        activeKey = key;
-        alert('Unlocked! Enjoy PTH');
+    // --- validate key ---
+    async function validateKey(){
+      const key = document.getElementById('userKey').value.trim();
+      if(!key) return alert('Enter key');
+      const res = await fetch(BACKEND + '/validate_key', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key})});
+      const d = await res.json();
+      if(d.valid){
+        alert('Unlocked');
+        sessionStorage.setItem('active_key', key);
         document.getElementById('keyGate').style.display = 'none';
-        showSection('home');
-        setupRealtime();
+        show('home');
+        subscribeRealtime();
         loadSignals();
         loadTransactions();
-        listenNotificationsForKey();
+        listenNotificationsForKey(key);
+        // if user is owner check admin privileges
+        if(d.role === 'owner') document.getElementById('admin').style.display = 'block';
       } else {
-        alert('Key invalid: ' + (data.reason || 'unknown'));
+        alert('Invalid key: ' + (d.reason || 'unknown'));
       }
     }
 
-    // Charting: uses /ohlc
-    let chart = null;
-    let series = null;
+    // --- charts ---
+    let chart, series;
     async function loadChart(){
       const symbol = document.getElementById('chartSymbol').value || 'BTC/USDT';
       const tf = document.getElementById('chartTf').value || '1m';
       const url = `${BACKEND}/ohlc?symbol=${encodeURIComponent(symbol)}&tf=${tf}&limit=200`;
       const res = await fetch(url);
       const data = await res.json();
-      if(data.error){ alert('Chart error: ' + data.error); return; }
-      const ohlcv = data.data || [];
-      const formatted = ohlcv.map(d=>{
-        return { time: Math.floor(d[0]/1000), open: d[1], high: d[2], low: d[3], close: d[4] };
-      });
-      // cleanup
+      if(data.error) return alert('Chart error: ' + data.error);
+      const formatted = (data.data || []).map(d=>({ time: Math.floor(d[0]/1000), open:d[1], high:d[2], low:d[3], close:d[4] }));
       const container = document.getElementById('chart');
       container.innerHTML = '';
-      chart = LightweightCharts.createChart(container, { layout: { background: '#0f1724', textColor: '#e6eef8' }, crosshair: { mode: 1 } });
+      chart = LightweightCharts.createChart(container, { layout: { background: '#0f1724', textColor:'#e6eef8' }});
       series = chart.addCandlestickSeries();
       series.setData(formatted);
     }
 
-    // Signals
+    // --- signals ---
     async function loadSignals(){
       const res = await fetch(BACKEND + '/signals?limit=50');
-      const list = await res.json();
-      const el = document.getElementById('signalsList');
-      el.innerHTML = '';
-      list.forEach(s=>{
-        const li = document.createElement('li');
-        li.className = 'item';
-        li.innerHTML = `<div><strong>${s.symbol}</strong><div class="muted">${s.signal} • ${s.timestamp}</div></div><div>${s.meta?.last_price || ''}</div>`;
+      const arr = await res.json();
+      const el = document.getElementById('signalsList'); el.innerHTML = '';
+      arr.forEach(s=>{
+        const li = document.createElement('li'); li.className='item';
+        li.innerHTML = `<div><strong>${s.symbol}</strong><div class="small">${s.signal} • ${s.timestamp}</div></div><div>${s.meta?.last_price || ''}</div>`;
         el.appendChild(li);
       });
     }
 
-    // Watchlist & Search
+    // realtime subscriptions (basic)
+    function subscribeRealtime(){
+      db.collection('signals').orderBy('timestamp','desc').limit(20).onSnapshot(loadSignals);
+    }
+
+    // --- watchlist & search ---
+    let watchlist = [];
     function addToWatchlist(){
-      const sym = document.getElementById('searchInput').value.trim();
-      if(!sym) return alert('Enter symbol');
-      watchlist.unshift(sym);
-      renderWatchlist();
+      const s = document.getElementById('searchInput').value.trim();
+      if(!s) return alert('Enter symbol');
+      watchlist.unshift(s); renderWatchlist();
     }
     function renderWatchlist(){
-      const el = document.getElementById('watchlist');
-      el.innerHTML = '';
-      watchlist.forEach(s=>{
+      const el = document.getElementById('watchlist'); el.innerHTML = '';
+      watchlist.forEach(sym=>{
         const li = document.createElement('li'); li.className='item';
-        li.innerHTML = `<div>${s}</div><div><button onclick="document.getElementById('chartSymbol').value='${s}'; loadChart()" class="primary">View</button></div>`;
+        li.innerHTML = `<div>${sym}</div><div><button onclick="document.getElementById('chartSymbol').value='${sym}'; loadChart()">View</button></div>`;
         el.appendChild(li);
       });
     }
 
-    // Notifications: only show notifications whose "key" matches activeKey
-    function listenNotificationsForKey(){
-      if(!activeKey) return;
-      db.collection('notifications').where('key', '==', activeKey).orderBy('timestamp','desc').limit(50).onSnapshot(snap=>{
-        const el = document.getElementById('notifList');
-        el.innerHTML = '';
+    // --- notifications for active key ---
+    function listenNotificationsForKey(key){
+      db.collection('notifications').where('key','==',key).orderBy('timestamp','desc').limit(50).onSnapshot(snap=>{
+        const el = document.getElementById('notifList'); el.innerHTML = '';
         snap.forEach(d=>{
           const n = d.data();
           const li = document.createElement('li'); li.className='item';
-          const s = n.signal || {};
-          li.innerHTML = `<div><strong>${s.meta?.symbol || '-'}</strong><div class="muted">${n.message || ''} — ${n.timestamp}</div></div><div>${s.signal||''}</div>`;
+          li.innerHTML = `<div><strong>${n.signal?.meta?.symbol || '-'}</strong><div class="small">${n.message || ''} • ${n.timestamp}</div></div><div>${n.signal?.signal || ''}</div>`;
           el.appendChild(li);
-          // short popup alert (mobile-friendly)
-          if(n.message) setTimeout(()=>alert('🔔 ' + (n.message || `${s.signal} on ${s.meta?.symbol}`)), 200);
+          // mobile popup
+          if(n.message) setTimeout(()=>alert('🔔 ' + (n.message || 'signal')), 200);
         });
       });
     }
 
-    // Transactions
+    // --- broker connect ---
+    async function connectBroker(){
+      const user = auth.currentUser; if(!user) return alert('Login required');
+      const broker = document.getElementById('brokerSelect').value.trim().toLowerCase();
+      const api = document.getElementById('brokerApiKey').value.trim();
+      const secret = document.getElementById('brokerSecret').value.trim();
+      if(!broker || !api || !secret) return alert('Fill broker, api and secret');
+      await db.collection('users').doc(user.uid).set({ brokers: { [broker]: { api, secret } } }, { merge: true });
+      alert('Broker saved: ' + broker);
+    }
+
+    // --- deposit / withdraw ---
+    async function deposit(){
+      const broker = (document.getElementById('brokerSelect').value || '').trim().toLowerCase();
+      const amount = parseFloat(document.getElementById('amount').value || '0');
+      if(!broker || !amount) return alert('Select broker and amount');
+      const user = auth.currentUser;
+      const payload = { user: user ? (user.email || user.uid) : 'guest', broker, amount };
+      const res = await fetch(BACKEND + '/deposit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const d = await res.json();
+      if(d.status === 'redirect' && d.redirect_url) window.open(d.redirect_url, '_blank');
+      else alert('Deposit: ' + (d.status || JSON.stringify(d)));
+      loadTransactions();
+    }
+    async function withdraw(){
+      const broker = (document.getElementById('brokerSelect').value || '').trim().toLowerCase();
+      const amount = parseFloat(document.getElementById('amount').value || '0');
+      if(!broker || !amount) return alert('Select broker and amount');
+      const user = auth.currentUser;
+      const payload = { user: user ? (user.email || user.uid) : 'guest', broker, amount };
+      const res = await fetch(BACKEND + '/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const d = await res.json();
+      if(d.status === 'redirect' && d.redirect_url) window.open(d.redirect_url, '_blank');
+      else alert('Withdraw: ' + (d.status || JSON.stringify(d)));
+      loadTransactions();
+    }
+
+    // --- transactions list ---
     async function loadTransactions(){
-      const el = document.getElementById('txList');
-      el.innerHTML = 'Loading...';
+      const el = document.getElementById('txList'); el.innerHTML = 'Loading...';
       const snap = await db.collection('transactions').orderBy('created_at','desc').limit(20).get();
       el.innerHTML = '';
       snap.forEach(d=>{
         const t = d.data();
         const li = document.createElement('li'); li.className='item';
-        li.innerHTML = `<div>${t.type.toUpperCase()} ${t.amount} — ${t.broker}</div><div class="muted">${t.status}</div>`;
+        li.innerHTML = `<div>${t.type.toUpperCase()} ${t.amount} — ${t.broker}</div><div class="small">${t.status}</div>`;
         el.appendChild(li);
       });
     }
 
-    // Broker connect (store keys in user doc)
-    async function connectBroker(){
-      const user = auth.currentUser;
-      if(!user) return alert('Not logged in');
-      const broker = document.getElementById('brokerSelect').value;
-      const api = document.getElementById('brokerApiKey').value.trim();
-      const secret = document.getElementById('brokerSecret').value.trim();
-      await db.collection('users').doc(user.uid).set({ brokers: { [broker]: { api, secret } } }, { merge: true });
-      alert('Broker connected: ' + broker);
+    // --- admin broadcast: fetch secret from Firestore at runtime (admin must be in admins collection) ---
+    let ADMIN_SECRET = null;
+    async function loadAdminSecretIfAdmin(){
+      const u = auth.currentUser;
+      if(!u) return;
+      // check admins collection first
+      const admDoc = await db.collection('admins').doc(u.uid).get();
+      if(!admDoc.exists) return; // not an admin
+      const cfg = await db.collection('admin').doc('config').get();
+      if(cfg.exists) ADMIN_SECRET = cfg.data().secret;
+      if(ADMIN_SECRET) document.getElementById('admin').style.display = 'block';
     }
 
-    // Deposit / Withdraw actions
-    async function deposit(){
-      const broker = document.getElementById('brokerSelect').value;
-      const amount = parseFloat(document.getElementById('amount').value || '0');
-      if(!amount || amount <= 0) return alert('Enter valid amount');
-      const user = auth.currentUser;
-      const payload = { user: user ? user.email || user.uid : 'guest', broker, amount };
-      const res = await fetch(BACKEND + '/deposit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if(data.status === 'redirect' && data.redirect_url){
-        window.open(data.redirect_url, '_blank');
-      } else {
-        alert('Deposit: ' + (data.status || JSON.stringify(data)));
-      }
-      loadTransactions();
-    }
-    async function withdraw(){
-      const broker = document.getElementById('brokerSelect').value;
-      const amount = parseFloat(document.getElementById('amount').value || '0');
-      if(!amount || amount <= 0) return alert('Enter valid amount');
-      const user = auth.currentUser;
-      const payload = { user: user ? user.email || user.uid : 'guest', broker, amount };
-      const res = await fetch(BACKEND + '/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      const data = await res.json();
-      if(data.status === 'redirect' && data.redirect_url){
-        window.open(data.redirect_url, '_blank');
-      } else {
-        alert('Withdraw: ' + (data.status || JSON.stringify(data)));
-      }
-      loadTransactions();
-    }
-
-    // Admin broadcast (protected)
     async function broadcast(){
-      const message = document.getElementById('adminMessage').value;
-      const symbol = document.getElementById('adminSymbol').value;
-      const signal = document.getElementById('adminSignal').value;
-      const price = document.getElementById('adminPrice').value;
-      const res = await fetch(BACKEND + '/send_notification', {
-        method:'POST',
-        headers: {'Content-Type':'application/json', 'X-Admin-Secret': ADMIN_SECRET},
-        body: JSON.stringify({ message, symbol, signal, price })
-      });
+      if(!ADMIN_SECRET) return alert('Admin secret not loaded or you are not admin');
+      const body = { message: document.getElementById('adminMessage').value, symbol: document.getElementById('adminSymbol').value, signal: document.getElementById('adminSignal').value, price: document.getElementById('adminPrice').value };
+      const res = await fetch(BACKEND + '/send_notification', { method:'POST', headers: { 'Content-Type':'application/json', 'X-Admin-Secret': ADMIN_SECRET }, body: JSON.stringify(body) });
       const data = await res.json();
-      if(res.ok) alert('Broadcast sent to ' + data.sent_to);
-      else alert('Broadcast failed: ' + (data.error || 'unknown'));
+      if(res.ok) alert('Broadcast sent to ' + (data.sent_to || data.sent));
+      else alert('Broadcast failed: ' + (data.error || JSON.stringify(data)));
     }
 
-    // Setup realtime listeners after unlocking
-    function setupRealtime(){
-      // signals feed real-time
-      db.collection('signals').orderBy('timestamp','desc').limit(20).onSnapshot(()=> loadSignals());
-      // user-specific notifications listen established only after unlock
+    // when user logs in, try to load admin secret
+    auth.onAuthStateChanged(async u=>{
+      if(u){
+        await loadAdminSecretIfAdmin();
+      } else {
+        ADMIN_SECRET = null;
+        document.getElementById('admin').style.display = 'none';
+      }
+    });
+
+    // subscribe realtime on signals
+    function subscribeRealtimeAfterUnlock(){
+      db.collection('signals').orderBy('timestamp','desc').limit(20).onSnapshot(loadSignals);
     }
 
+    // small init: hide admin and other sections
+    ['home','search','notifications','account','admin'].forEach(s => document.getElementById(s).style.display = 'none');
   </script>
 </body>
-  </html>
+        </html>
