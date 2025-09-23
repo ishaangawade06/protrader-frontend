@@ -47,12 +47,39 @@
   </div>
 
   <!-- Account -->
-  <div id="account-screen">
-    <h2>👤 Account</h2>
-    <button onclick="deposit()">Deposit</button>
-    <button onclick="withdraw()">Withdraw</button>
-    <div id="txnHistory"></div>
-  </div>
+<div id="account-screen">
+  <h2>👤 Account</h2>
+  <select id="brokerSelect">
+    <option value="zerodha">Zerodha</option>
+    <option value="angelone">AngelOne</option>
+    <option value="binance">Binance</option>
+    <option value="exness">Exness</option>
+  </select><br><br>
+  <input id="amount" placeholder="Enter amount"><br><br>
+  <button onclick="deposit()">Deposit</button>
+  <button onclick="withdraw()">Withdraw</button>
+  <div id="txnHistory"></div>
+</div>
+
+<script>
+async function deposit(){
+  const broker=document.getElementById("brokerSelect").value;
+  const amount=document.getElementById("amount").value;
+  const res=await fetch(BACKEND+"/deposit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:auth.currentUser.email,broker,amount})});
+  const d=await res.json();
+  if(d.redirect_url){ window.open(d.redirect_url,"_blank"); }
+  document.getElementById("txnHistory").innerHTML+="<div>Deposit → "+broker+" → "+d.status+"</div>";
+}
+
+async function withdraw(){
+  const broker=document.getElementById("brokerSelect").value;
+  const amount=document.getElementById("amount").value;
+  const res=await fetch(BACKEND+"/withdraw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:auth.currentUser.email,broker,amount})});
+  const d=await res.json();
+  if(d.redirect_url){ window.open(d.redirect_url,"_blank"); }
+  document.getElementById("txnHistory").innerHTML+="<div>Withdraw → "+broker+" → "+d.status+"</div>";
+}
+  </script>
 
   <!-- Admin -->
   <div id="admin-screen">
