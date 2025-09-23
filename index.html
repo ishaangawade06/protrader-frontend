@@ -1,56 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>PTH App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PTH — ProTraderHack</title>
+
+  <!-- lightweight-charts for candlestick charts -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
   <style>
-    body { background: #0b1220; color: #e6eef8; font-family: Inter, Arial; }
-    .card { background: #0f1724; padding: 16px; border-radius: 10px; }
-    .hidden { display: none; }
+    body { background:#071127; color:#e6eef8; font-family: Inter, Arial, sans-serif; margin:0; padding:0; }
+    .container { max-width:900px; margin:0 auto; padding:12px; }
+    .card { background:#0f1724; padding:14px; border-radius:10px; margin-bottom:12px; }
+    input,select,button { padding:10px; border-radius:8px; border:0; }
+    input,select { width:100%; margin:6px 0; background:#0b1320; color:#e6eef8; }
+    button.primary { background:#2563eb; color:white; }
+    nav { position:fixed; left:0; right:0; bottom:0; background:#0b1220; display:flex; gap:8px; padding:8px; justify-content:space-around; border-top:1px solid rgba(255,255,255,0.03); }
+    nav button { flex:1; background:none; border:0; color:#9aa6b2; padding:8px; font-size:16px; }
+    nav button.active { color:#60a5fa; }
+    #chart { height:320px; }
+    ul.list { list-style:none; padding:0; margin:0; max-height:200px; overflow:auto; }
+    li.item { padding:8px; border-bottom:1px solid rgba(255,255,255,0.02); display:flex; justify-content:space-between; }
+    .muted { color:#9aa6b2; font-size:13px; }
   </style>
 </head>
-<body class="p-4">
+<body>
+  <div class="container">
 
-  <!-- Auth -->
-  <div id="auth-screen" class="card max-w-md mx-auto">
-    <h2 class="text-lg font-semibold mb-3">Login / Sign Up</h2>
-    <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900">
-    <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-2 rounded bg-gray-900">
-    <input id="username" type="text" placeholder="Username (letters+numbers, max 12)" class="w-full p-2 mb-2 rounded bg-gray-900">
-    <button onclick="signup()" class="w-full py-2 bg-green-600 rounded mb-2">Sign Up</button>
-    <button onclick="login()" class="w-full py-2 bg-blue-600 rounded">Login</button>
-  </div>
+    <!-- AUTH -->
+    <div id="auth" class="card" style="display:block;">
+      <h2>🔑 ProTraderHack — Login / Signup</h2>
+      <input id="email" placeholder="Email" type="email">
+      <input id="password" placeholder="Password" type="password">
+      <input id="username" placeholder="Username (a-z0-9 max12)">
 
-  <!-- Home -->
-  <div id="home-screen" class="hidden">
-    <h2 class="text-xl font-bold text-green-400 mb-4">Welcome to PTH</h2>
+      <div style="display:flex; gap:8px;">
+        <button class="primary" onclick="signup()">Sign Up</button>
+        <button onclick="login()">Login</button>
+      </div>
+    </div>
 
-    <!-- Deposit/Withdraw -->
-    <div class="card mb-4">
-      <h3 class="font-semibold mb-2">Deposit / Withdraw</h3>
-      <select id="brokerSelect" class="w-full mb-2 p-2 rounded bg-gray-900">
+    <!-- KEY GATE -->
+    <div id="keyGate" class="card" style="display:none;">
+      <h3>🔒 Unlock PTH</h3>
+      <p class="muted">Enter your access key (7d/15d/30d/50d/permanent keys)</p>
+      <input id="accessKey" placeholder="Enter access key">
+      <button class="primary" onclick="unlock()">Unlock</button>
+    </div>
+
+    <!-- HOME -->
+    <div id="home" style="display:none;">
+      <div class="card">
+        <h3>🏠 Home — Watchlist & Chart</h3>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <input id="chartSymbol" placeholder="Symbol e.g. BTC/USDT" value="BTC/USDT">
+          <select id="chartTf">
+            <option value="1m">1m</option>
+            <option value="5m">5m</option>
+            <option value="15m">15m</option>
+            <option value="1h">1h</option>
+            <option value="1d">1d</option>
+          </select>
+          <button onclick="loadChart()" class="primary">Load Chart</button>
+        </div>
+        <div id="chart" class="card" style="padding:0;"></div>
+      </div>
+
+      <div class="card">
+        <h4>Signals (recent)</h4>
+        <ul id="signalsList" class="list"></ul>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div id="search" class="card" style="display:none;">
+      <h3>🔍 Search & Add to Watchlist</h3>
+      <input id="searchInput" placeholder="Search symbol e.g. ETH/USDT or INFY-NSE">
+      <div style="display:flex; gap:8px;">
+        <button onclick="addToWatchlist()" class="primary">Add</button>
+      </div>
+      <h4 class="muted">Watchlist</h4>
+      <ul id="watchlist" class="list"></ul>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="notifications" class="card" style="display:none;">
+      <h3>🔔 Notifications</h3>
+      <ul id="notifList" class="list"></ul>
+    </div>
+
+    <!-- ACCOUNT -->
+    <div id="account" class="card" style="display:none;">
+      <h3>👤 Account</h3>
+      <p class="muted">Connect broker (API key & secret) — stored in Firestore (encrypted in future)</p>
+      <select id="brokerSelect">
         <option value="binance">Binance</option>
         <option value="exness">Exness</option>
         <option value="zerodha">Zerodha</option>
         <option value="angelone">AngelOne</option>
       </select>
-      <input id="amount" type="number" placeholder="Amount" class="w-full p-2 mb-2 rounded bg-gray-900">
-      <div class="flex gap-2">
-        <button onclick="deposit()" class="flex-1 py-2 bg-green-600 rounded">Deposit</button>
-        <button onclick="withdraw()" class="flex-1 py-2 bg-red-600 rounded">Withdraw</button>
+      <input id="brokerApiKey" placeholder="API Key">
+      <input id="brokerSecret" placeholder="Secret Key">
+      <div style="display:flex; gap:8px;">
+        <button onclick="connectBroker()" class="primary">Connect Broker</button>
       </div>
+
+      <hr style="margin:12px 0; border-color:rgba(255,255,255,0.03)">
+
+      <h4>Deposit / Withdraw</h4>
+      <input id="amount" placeholder="Amount">
+      <div style="display:flex; gap:8px;">
+        <button class="primary" onclick="deposit()">Deposit</button>
+        <button onclick="withdraw()">Withdraw</button>
+      </div>
+
+      <h4 style="margin-top:12px;">Transactions</h4>
+      <ul id="txList" class="list"></ul>
     </div>
 
-    <!-- Transactions -->
-    <div class="card">
-      <h3 class="font-semibold mb-2">Transactions</h3>
-      <ul id="txList" class="text-sm"></ul>
+    <!-- ADMIN (owner keys required) -->
+    <div id="admin" class="card" style="display:none;">
+      <h3>⚙️ Admin</h3>
+      <p class="muted">Broadcast notifications to all valid users</p>
+      <input id="adminMessage" placeholder="Message (optional)">
+      <input id="adminSymbol" placeholder="Symbol">
+      <select id="adminSignal">
+        <option value="INFO">INFO</option>
+        <option value="BUY">BUY</option>
+        <option value="SELL">SELL</option>
+      </select>
+      <input id="adminPrice" placeholder="Price">
+      <button class="primary" onclick="broadcast()">Broadcast</button>
     </div>
 
-    <button onclick="logout()" class="mt-4 py-2 px-4 bg-gray-700 rounded">Logout</button>
   </div>
+
+  <!-- bottom nav -->
+  <nav>
+    <button id="navHome" class="active" onclick="nav('home')">Home</button>
+    <button id="navSearch" onclick="nav('search')">Search</button>
+    <button id="navNotif" onclick="nav('notifications')">Notifications</button>
+    <button id="navAccount" onclick="nav('account')">Account</button>
+    <button id="navAdmin" onclick="nav('admin')">Admin</button>
+  </nav>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -58,118 +150,238 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script>
+    const BACKEND = (location.hostname.includes('localhost') ? 'http://localhost:5000' : 'https://protrader-backend-sbus.onrender.com');
+    const ADMIN_SECRET = "supersecret123"; // same as backend — store safely in production
+
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
       projectId: "protraderhack-d67f0",
-      storageBucket: "protraderhack-d67f0.firebasestorage.app",
-      messagingSenderId: "1062485216321",
-      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    const BACKEND_URL = "https://protrader-backend-sbus.onrender.com";
+    // state
+    let activeKey = null;
+    let watchlist = [];
 
-    // -------- AUTH --------
-    async function signup() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const username = document.getElementById("username").value;
+    // UI helpers
+    function showSection(id) {
+      ['home','search','notifications','account','admin'].forEach(k=>{
+        document.getElementById(k).style.display = (k === id) ? 'block' : 'none';
+      });
+      document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+      const btn = { home:'navHome', search:'navSearch', notifications:'navNotif', account:'navAccount', admin:'navAdmin' }[id];
+      if(btn) document.getElementById(btn).classList.add('active');
+    }
+    function nav(section){ showSection(section); }
 
-      if (!/^[a-z0-9]{1,12}$/.test(username)) {
-        alert("❌ Username must be lowercase letters/numbers, max 12.");
+    // Auth
+    async function signup(){
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const username = document.getElementById('username').value;
+      if(!/^[a-z0-9]{1,12}$/.test(username)){
+        alert('Username must be lowercase letters and numbers, max 12');
         return;
       }
-
       try {
-        await auth.createUserWithEmailAndPassword(email, password);
+        await auth.createUserWithEmailAndPassword(email,password);
         const user = auth.currentUser;
-        if (user) {
-          await db.collection("users").doc(user.uid).set({ username });
-        }
-        alert("✅ Account created!");
-      } catch (err) {
-        alert("❌ " + err.message);
-      }
+        if(user) await db.collection('users').doc(user.uid).set({ username, created_at: new Date().toISOString() });
+        alert('Account created');
+      } catch(e){ alert(e.message); }
     }
-
-    async function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+    async function login(){
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
       try {
-        await auth.signInWithEmailAndPassword(email, password);
-      } catch (err) {
-        alert("❌ " + err.message);
-      }
+        await auth.signInWithEmailAndPassword(email,password);
+      } catch(e){ alert(e.message); }
     }
-
-    function logout() {
-      auth.signOut();
-    }
-
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById("auth-screen").style.display = "none";
-        document.getElementById("home-screen").style.display = "block";
-        loadTransactions();
+    auth.onAuthStateChanged(u=>{
+      if(u){
+        document.getElementById('auth').style.display = 'none';
+        document.getElementById('keyGate').style.display = 'block';
       } else {
-        document.getElementById("auth-screen").style.display = "block";
-        document.getElementById("home-screen").style.display = "none";
+        document.getElementById('auth').style.display = 'block';
+        document.getElementById('keyGate').style.display = 'none';
+        showSection('home'); // default
       }
     });
 
-    // -------- DEPOSIT / WITHDRAW --------
-    async function deposit() {
-      const broker = document.getElementById("brokerSelect").value;
-      const amount = document.getElementById("amount").value;
-
-      const res = await fetch(`${BACKEND_URL}/deposit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ broker, amount })
-      });
+    // Unlock with key
+    async function unlock(){
+      const key = document.getElementById('accessKey').value.trim();
+      if(!key){ alert('Enter key'); return; }
+      const res = await fetch(BACKEND + '/validate_key', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key }) });
       const data = await res.json();
-      if (data.status === "redirect") {
-        window.open(data.url, "_blank");
+      if(data.valid){
+        activeKey = key;
+        alert('Unlocked! Enjoy PTH');
+        document.getElementById('keyGate').style.display = 'none';
+        showSection('home');
+        setupRealtime();
+        loadSignals();
+        loadTransactions();
+        listenNotificationsForKey();
       } else {
-        alert("Deposit: " + data.status);
+        alert('Key invalid: ' + (data.reason || 'unknown'));
+      }
+    }
+
+    // Charting: uses /ohlc
+    let chart = null;
+    let series = null;
+    async function loadChart(){
+      const symbol = document.getElementById('chartSymbol').value || 'BTC/USDT';
+      const tf = document.getElementById('chartTf').value || '1m';
+      const url = `${BACKEND}/ohlc?symbol=${encodeURIComponent(symbol)}&tf=${tf}&limit=200`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if(data.error){ alert('Chart error: ' + data.error); return; }
+      const ohlcv = data.data || [];
+      const formatted = ohlcv.map(d=>{
+        return { time: Math.floor(d[0]/1000), open: d[1], high: d[2], low: d[3], close: d[4] };
+      });
+      // cleanup
+      const container = document.getElementById('chart');
+      container.innerHTML = '';
+      chart = LightweightCharts.createChart(container, { layout: { background: '#0f1724', textColor: '#e6eef8' }, crosshair: { mode: 1 } });
+      series = chart.addCandlestickSeries();
+      series.setData(formatted);
+    }
+
+    // Signals
+    async function loadSignals(){
+      const res = await fetch(BACKEND + '/signals?limit=50');
+      const list = await res.json();
+      const el = document.getElementById('signalsList');
+      el.innerHTML = '';
+      list.forEach(s=>{
+        const li = document.createElement('li');
+        li.className = 'item';
+        li.innerHTML = `<div><strong>${s.symbol}</strong><div class="muted">${s.signal} • ${s.timestamp}</div></div><div>${s.meta?.last_price || ''}</div>`;
+        el.appendChild(li);
+      });
+    }
+
+    // Watchlist & Search
+    function addToWatchlist(){
+      const sym = document.getElementById('searchInput').value.trim();
+      if(!sym) return alert('Enter symbol');
+      watchlist.unshift(sym);
+      renderWatchlist();
+    }
+    function renderWatchlist(){
+      const el = document.getElementById('watchlist');
+      el.innerHTML = '';
+      watchlist.forEach(s=>{
+        const li = document.createElement('li'); li.className='item';
+        li.innerHTML = `<div>${s}</div><div><button onclick="document.getElementById('chartSymbol').value='${s}'; loadChart()" class="primary">View</button></div>`;
+        el.appendChild(li);
+      });
+    }
+
+    // Notifications: only show notifications whose "key" matches activeKey
+    function listenNotificationsForKey(){
+      if(!activeKey) return;
+      db.collection('notifications').where('key', '==', activeKey).orderBy('timestamp','desc').limit(50).onSnapshot(snap=>{
+        const el = document.getElementById('notifList');
+        el.innerHTML = '';
+        snap.forEach(d=>{
+          const n = d.data();
+          const li = document.createElement('li'); li.className='item';
+          const s = n.signal || {};
+          li.innerHTML = `<div><strong>${s.meta?.symbol || '-'}</strong><div class="muted">${n.message || ''} — ${n.timestamp}</div></div><div>${s.signal||''}</div>`;
+          el.appendChild(li);
+          // short popup alert (mobile-friendly)
+          if(n.message) setTimeout(()=>alert('🔔 ' + (n.message || `${s.signal} on ${s.meta?.symbol}`)), 200);
+        });
+      });
+    }
+
+    // Transactions
+    async function loadTransactions(){
+      const el = document.getElementById('txList');
+      el.innerHTML = 'Loading...';
+      const snap = await db.collection('transactions').orderBy('created_at','desc').limit(20).get();
+      el.innerHTML = '';
+      snap.forEach(d=>{
+        const t = d.data();
+        const li = document.createElement('li'); li.className='item';
+        li.innerHTML = `<div>${t.type.toUpperCase()} ${t.amount} — ${t.broker}</div><div class="muted">${t.status}</div>`;
+        el.appendChild(li);
+      });
+    }
+
+    // Broker connect (store keys in user doc)
+    async function connectBroker(){
+      const user = auth.currentUser;
+      if(!user) return alert('Not logged in');
+      const broker = document.getElementById('brokerSelect').value;
+      const api = document.getElementById('brokerApiKey').value.trim();
+      const secret = document.getElementById('brokerSecret').value.trim();
+      await db.collection('users').doc(user.uid).set({ brokers: { [broker]: { api, secret } } }, { merge: true });
+      alert('Broker connected: ' + broker);
+    }
+
+    // Deposit / Withdraw actions
+    async function deposit(){
+      const broker = document.getElementById('brokerSelect').value;
+      const amount = parseFloat(document.getElementById('amount').value || '0');
+      if(!amount || amount <= 0) return alert('Enter valid amount');
+      const user = auth.currentUser;
+      const payload = { user: user ? user.email || user.uid : 'guest', broker, amount };
+      const res = await fetch(BACKEND + '/deposit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if(data.status === 'redirect' && data.redirect_url){
+        window.open(data.redirect_url, '_blank');
+      } else {
+        alert('Deposit: ' + (data.status || JSON.stringify(data)));
+      }
+      loadTransactions();
+    }
+    async function withdraw(){
+      const broker = document.getElementById('brokerSelect').value;
+      const amount = parseFloat(document.getElementById('amount').value || '0');
+      if(!amount || amount <= 0) return alert('Enter valid amount');
+      const user = auth.currentUser;
+      const payload = { user: user ? user.email || user.uid : 'guest', broker, amount };
+      const res = await fetch(BACKEND + '/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if(data.status === 'redirect' && data.redirect_url){
+        window.open(data.redirect_url, '_blank');
+      } else {
+        alert('Withdraw: ' + (data.status || JSON.stringify(data)));
       }
       loadTransactions();
     }
 
-    async function withdraw() {
-      const broker = document.getElementById("brokerSelect").value;
-      const amount = document.getElementById("amount").value;
-
-      const res = await fetch(`${BACKEND_URL}/withdraw`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ broker, amount })
+    // Admin broadcast (protected)
+    async function broadcast(){
+      const message = document.getElementById('adminMessage').value;
+      const symbol = document.getElementById('adminSymbol').value;
+      const signal = document.getElementById('adminSignal').value;
+      const price = document.getElementById('adminPrice').value;
+      const res = await fetch(BACKEND + '/send_notification', {
+        method:'POST',
+        headers: {'Content-Type':'application/json', 'X-Admin-Secret': ADMIN_SECRET},
+        body: JSON.stringify({ message, symbol, signal, price })
       });
       const data = await res.json();
-      if (data.status === "redirect") {
-        window.open(data.url, "_blank");
-      } else {
-        alert("Withdraw: " + data.status);
-      }
-      loadTransactions();
+      if(res.ok) alert('Broadcast sent to ' + data.sent_to);
+      else alert('Broadcast failed: ' + (data.error || 'unknown'));
     }
 
-    // -------- TRANSACTIONS --------
-    async function loadTransactions() {
-      const el = document.getElementById("txList");
-      el.innerHTML = "";
-      const snap = await db.collection("transactions")
-        .orderBy("created_at", "desc")
-        .limit(10)
-        .get();
-      snap.forEach(doc => {
-        const t = doc.data();
-        el.innerHTML += `<li>${t.type} ${t.amount} on ${t.broker} — ${t.status}</li>`;
-      });
+    // Setup realtime listeners after unlocking
+    function setupRealtime(){
+      // signals feed real-time
+      db.collection('signals').orderBy('timestamp','desc').limit(20).onSnapshot(()=> loadSignals());
+      // user-specific notifications listen established only after unlock
     }
+
   </script>
 </body>
   </html>
