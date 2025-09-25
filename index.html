@@ -3,396 +3,177 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ProTraderHack</title>
-
-  <!-- Chart lib -->
-  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-
+  <title>PTH App</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body{font-family:Inter,Arial;background:#071127;color:#e6eef8;margin:0;padding:12px;}
-    .card{background:#0f1724;padding:12px;border-radius:10px;margin-bottom:12px;}
-    input,select,button{padding:10px;border-radius:8px;border:0;background:#0b1320;color:#e6eef8;width:100%;margin:6px 0;}
-    nav{position:fixed;left:0;right:0;bottom:0;background:#0b1220;display:flex;gap:6px;padding:8px;border-top:1px solid rgba(255,255,255,0.03);}
-    nav button{flex:1;background:none;border:0;color:#9aa6b2;padding:8px;font-size:15px;}
-    nav button.active{color:#60a5fa;}
-    #chart{height:320px;}
-    .small{font-size:13px;color:#9aa6b2;}
-    ul.list{list-style:none;padding:0;margin:0;max-height:260px;overflow:auto;}
-    li.item{padding:8px;border-bottom:1px solid rgba(255,255,255,0.02);display:flex;justify-content:space-between;}
-    #introVideo{width:100%;border-radius:10px;}
+    body { background:#0b1220; color:#e6eef8; font-family:Inter,Arial; }
+    .card{background:#0f1724;padding:16px;border-radius:10px;}
+    .hidden{display:none;}
+    .blurred { filter: blur(6px); }
+    video { width:100%; border-radius:12px; }
+    nav { position:fixed; bottom:0; left:0; right:0; background:#0f1724; display:flex; justify-content:space-around; padding:10px; }
+    nav button { flex:1; padding:8px; }
   </style>
 </head>
-<body>
-  <div id="app">
+<body class="p-4">
 
-    <!-- Intro video card (plays once) -->
-    <div id="intro" class="card" style="display:none;">
-      <video id="introVideo" controls>
-        <source src="VID-20250904-WA0075.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button id="skipIntro" class="">Skip</button>
-      </div>
-    </div>
-
-    <!-- Auth -->
-    <div id="auth" class="card">
-      <h2>🔒 Login / Sign up</h2>
-      <input id="email" placeholder="Email" type="email">
-      <input id="password" placeholder="Password" type="password">
-      <input id="username" placeholder="Username (a-z0-9, max12)">
-      <div style="display:flex;gap:8px;">
-        <button onclick="signup()">Sign Up</button>
-        <button onclick="login()">Login</button>
-      </div>
-      <p class="small">Google login not included here — add later if you want.</p>
-    </div>
-
-    <!-- Key gate -->
-    <div id="keyGate" class="card" style="display:none;">
-      <h3>🔑 Enter your key to unlock</h3>
-      <input id="userKey" placeholder="Enter key (e.g. pth7)">
-      <button onclick="validateKey()">Unlock</button>
-      <p class="small">Keys: pth7 (7d), key15 (15d), ishaan30 (30d), splkey50 (50d), ishaan (permanent)</p>
-    </div>
-
-    <!-- Home (charts + signals) -->
-    <div id="home" style="display:none;">
-      <div class="card">
-        <h3>🏠 Home</h3>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <input id="chartSymbol" value="BTC/USDT" placeholder="Symbol">
-          <select id="chartTf"><option>1m</option><option>5m</option><option>15m</option><option>1h</option><option>1d</option></select>
-          <button onclick="loadChart()">Load</button>
-        </div>
-        <div id="chart" class="card"></div>
-      </div>
-
-      <div class="card">
-        <h4>Signals</h4>
-        <ul id="signalsList" class="list"></ul>
-      </div>
-    </div>
-
-    <!-- Search -->
-    <div id="search" class="card" style="display:none;">
-      <h3>🔎 Search & Watchlist</h3>
-      <input id="searchInput" placeholder="Symbol e.g. BTC/USDT or INFY-NSE">
-      <button onclick="addToWatchlist()">Add to watchlist</button>
-      <h4 class="small">Watchlist</h4>
-      <ul id="watchlist" class="list"></ul>
-    </div>
-
-    <!-- Notifications -->
-    <div id="notifications" class="card" style="display:none;">
-      <h3>🔔 Notifications</h3>
-      <ul id="notifList" class="list"></ul>
-    </div>
-
-    <!-- Account -->
-    <div id="account" class="card" style="display:none;">
-      <h3>👤 Account</h3>
-      <p class="small">Username & broker connection</p>
-      <input id="brokerSelect" list="brokers" placeholder="Select broker (binance/exness/zerodha/angelone)">
-      <datalist id="brokers"><option>binance</option><option>exness</option><option>zerodha</option><option>angelone</option></datalist>
-      <input id="brokerApiKey" placeholder="Broker API Key">
-      <input id="brokerSecret" placeholder="Broker Secret">
-      <button onclick="connectBroker()">Connect Broker</button>
-
-      <hr style="margin:8px 0;border-color:rgba(255,255,255,0.03)">
-
-      <h4>Deposit / Withdraw</h4>
-      <input id="amount" placeholder="Amount">
-      <div style="display:flex;gap:8px;">
-        <button onclick="deposit()">Deposit</button>
-        <button onclick="withdraw()">Withdraw</button>
-      </div>
-
-      <h4 style="margin-top:8px;">Transactions</h4>
-      <ul id="txList" class="list"></ul>
-    </div>
-
-    <!-- Admin (only visible when admin role) -->
-    <div id="admin" class="card" style="display:none;">
-      <h3>⚙️ Admin</h3>
-      <input id="adminMessage" placeholder="Message">
-      <input id="adminSymbol" placeholder="Symbol">
-      <select id="adminSignal"><option>INFO</option><option>BUY</option><option>SELL</option></select>
-      <input id="adminPrice" placeholder="Price">
-      <button onclick="broadcast()">Broadcast</button>
-    </div>
-
+  <!-- Intro Video -->
+  <div id="introScreen" class="card">
+    <video id="introVideo" autoplay>
+      <source src="VID-20250904-WA0075.mp4" type="video/mp4">
+    </video>
+    <button id="skipIntro" class="w-full mt-3 py-2 bg-blue-600 rounded">Skip</button>
   </div>
 
-  <nav>
-    <button id="navHome" class="active" onclick="nav('home')">Home</button>
-    <button id="navSearch" onclick="nav('search')">Search</button>
-    <button id="navNotif" onclick="nav('notifications')">Notifications</button>
-    <button id="navAccount" onclick="nav('account')">Account</button>
-    <button id="navAdmin" onclick="nav('admin')">Admin</button>
+  <!-- Login / Signup -->
+  <div id="authScreen" class="card hidden">
+    <h2 class="text-lg font-semibold mb-3">Sign Up / Login</h2>
+    <input id="username" type="text" placeholder="Username (max 12, lowercase)" class="w-full p-2 mb-2 rounded bg-gray-900" />
+    <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900" />
+    <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-2 rounded bg-gray-900" />
+    <button id="signupBtn" class="w-full py-2 bg-green-600 rounded mb-2">Sign Up</button>
+    <button id="loginBtn" class="w-full py-2 bg-blue-600 rounded mb-2">Login</button>
+    <button id="googleLogin" class="w-full py-2 bg-red-600 rounded mb-2">Login with Google</button>
+
+    <hr class="my-3 border-gray-700"/>
+    <input id="phoneNumber" type="text" placeholder="+91xxxxxxxxxx" class="w-full p-2 mb-2 rounded bg-gray-900" />
+    <div id="recaptcha-container"></div>
+    <button id="sendOtpBtn" class="w-full py-2 bg-yellow-600 rounded">Send OTP</button>
+    <input id="otpCode" type="text" placeholder="Enter OTP" class="w-full p-2 mt-2 rounded bg-gray-900" />
+    <button id="verifyOtpBtn" class="w-full py-2 bg-green-600 rounded mt-2">Verify OTP</button>
+  </div>
+
+  <!-- Key Unlock Screen -->
+  <div id="keyScreen" class="card hidden">
+    <h2 class="text-lg font-semibold mb-3">Enter Access Key 🔑</h2>
+    <input id="accessKey" type="text" placeholder="Enter key" class="w-full p-2 mb-2 rounded bg-gray-900" />
+    <button id="unlockBtn" class="w-full py-2 bg-blue-600 rounded">Unlock</button>
+  </div>
+
+  <!-- Home Screen -->
+  <div id="homeScreen" class="hidden">
+    <div class="card blurred" id="homeContent">
+      <h2 class="text-lg font-semibold mb-3">Home</h2>
+      <p id="balance">Balance: --</p>
+      <button class="py-2 px-3 bg-green-600 rounded">Buy</button>
+      <button class="py-2 px-3 bg-red-600 rounded">Sell</button>
+    </div>
+    <div class="text-center mt-6">
+      <button id="unlockEmoji" class="text-6xl">🔒</button>
+    </div>
+  </div>
+
+  <!-- Search Screen -->
+  <div id="searchScreen" class="hidden card">
+    <input id="searchBox" placeholder="Search symbol..." class="w-full p-2 mb-3 rounded bg-gray-900" />
+    <ul id="results"></ul>
+  </div>
+
+  <!-- Account Screen -->
+  <div id="accountScreen" class="hidden card">
+    <h2 class="font-semibold mb-2">Account</h2>
+    <input placeholder="API Key" class="w-full p-2 mb-2 rounded bg-gray-900"/>
+    <input placeholder="Secret Key" class="w-full p-2 mb-2 rounded bg-gray-900"/>
+    <button class="w-full py-2 bg-green-600 rounded mb-2">Connect Broker</button>
+    <button id="depositBtn" class="w-full py-2 bg-blue-600 rounded mb-2">Deposit</button>
+    <button id="withdrawBtn" class="w-full py-2 bg-red-600 rounded">Withdraw</button>
+  </div>
+
+  <!-- Admin Screen -->
+  <div id="adminScreen" class="hidden card">
+    <h2 class="text-lg font-semibold mb-3">Admin Panel</h2>
+    <p>Only admins with special keys can manage users/keys.</p>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="hidden" id="bottomNav">
+    <button onclick="showScreen('homeScreen')">Home</button>
+    <button onclick="showScreen('searchScreen')">Search</button>
+    <button onclick="showScreen('adminScreen')">Admin</button>
+    <button onclick="showScreen('accountScreen')">Account</button>
   </nav>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
   <script>
-    const BACKEND = (location.hostname.includes('localhost') ? 'http://localhost:5000' : 'https://protrader-backend-sbus.onrender.com');
-
     const firebaseConfig = {
-      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+      apiKey: "YOUR_API_KEY",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
       projectId: "protraderhack-d67f0",
+      storageBucket: "protraderhack-d67f0.appspot.com",
+      messagingSenderId: "1062485216321",
+      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.firestore();
 
-    // --- session for intro video (play once per session) ---
-    if (!sessionStorage.getItem('intro_played')) {
-      document.getElementById('intro').style.display = 'block';
-      document.getElementById('auth').style.display = 'none';
-      document.getElementById('skipIntro').onclick = () => {
-        document.getElementById('intro').style.display = 'none';
-        document.getElementById('auth').style.display = 'block';
-        sessionStorage.setItem('intro_played', '1');
+    // --- Navigation ---
+    function showScreen(id){
+      document.querySelectorAll('#homeScreen,#searchScreen,#accountScreen,#adminScreen')
+        .forEach(el=>el.style.display='none');
+      document.getElementById(id).style.display='block';
+    }
+
+    // --- Intro Skip ---
+    document.getElementById('skipIntro').onclick = ()=>{
+      document.getElementById('introScreen').style.display='none';
+      document.getElementById('authScreen').style.display='block';
+    };
+
+    // --- Login / Signup ---
+    document.getElementById('signupBtn').onclick = async ()=>{
+      const u = document.getElementById('username').value;
+      if(!/^[a-z0-9]{1,12}$/.test(u)) { alert("Invalid username"); return; }
+      const e = document.getElementById('email').value;
+      const p = document.getElementById('password').value;
+      try { await auth.createUserWithEmailAndPassword(e,p); } catch(err){ alert(err.message); }
+    };
+    document.getElementById('loginBtn').onclick = async ()=>{
+      const e = document.getElementById('email').value;
+      const p = document.getElementById('password').value;
+      try { await auth.signInWithEmailAndPassword(e,p); } catch(err){ alert(err.message); }
+    };
+    document.getElementById('googleLogin').onclick = async ()=>{
+      try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch(err){ alert(err.message); }
+    };
+
+    // --- Key Unlock ---
+    document.getElementById('unlockBtn').onclick = ()=>{
+      const k = document.getElementById('accessKey').value;
+      const validKeys = {
+        "pth7":7, "key15":15, "ishaan30":30, "splkey50":50, "ishaan":"perm",
+        "vamya":"admin", "pthowner16":"admin"
       };
-      // if video ends
-      document.getElementById('introVideo').onended = () => {
-        document.getElementById('intro').style.display = 'none';
-        document.getElementById('auth').style.display = 'block';
-        sessionStorage.setItem('intro_played', '1');
-      };
-    } else {
-      document.getElementById('intro').style.display = 'none';
-    }
+      if(validKeys[k]){
+        document.getElementById('keyScreen').style.display='none';
+        document.getElementById('homeScreen').style.display='block';
+        document.getElementById('bottomNav').style.display='flex';
+        if(validKeys[k]==="admin"){ showScreen('adminScreen'); }
+      } else { alert("Invalid Key"); }
+    };
 
-    // UI navigation
-    function show(section) {
-      ['home','search','notifications','account','admin'].forEach(s => {
-        document.getElementById(s).style.display = (s === section) ? 'block' : 'none';
-      });
-      document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-      const map = {home:'navHome', search:'navSearch', notifications:'navNotif', account:'navAccount', admin:'navAdmin'};
-      document.getElementById(map[section]).classList.add('active');
-    }
-    function nav(section){ show(section); }
+    // --- Unlock Emoji ---
+    document.getElementById('unlockEmoji').onclick = ()=>{
+      document.getElementById('homeContent').classList.remove('blurred');
+      alert("Home & Search Unlocked!");
+    };
 
-    // --- auth & username rules ---
-    async function signup(){
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const username = document.getElementById('username').value;
-      if(!/^[a-z0-9]{1,12}$/.test(username)){
-        return alert('Username must be lowercase letters/numbers and max 12 characters');
-      }
-      try {
-        await auth.createUserWithEmailAndPassword(email, password);
-        const u = auth.currentUser;
-        if(u){
-          await db.collection('users').doc(u.uid).set({ username, created_at: new Date().toISOString() });
-        }
-        alert('Account created');
-      } catch(e){ alert(e.message); }
-    }
-    async function login(){
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      try {
-        await auth.signInWithEmailAndPassword(email,password);
-      } catch(e){ alert(e.message); }
-    }
-    function signout(){ auth.signOut(); }
+    // --- Deposit / Withdraw ---
+    document.getElementById('depositBtn').onclick = ()=>{
+      alert("Redirecting to broker deposit page...");
+    };
+    document.getElementById('withdrawBtn').onclick = ()=>{
+      alert("Redirecting to broker withdraw page...");
+    };
 
+    // --- Auth State ---
     auth.onAuthStateChanged(user=>{
       if(user){
-        document.getElementById('auth').style.display = 'none';
-        document.getElementById('keyGate').style.display = 'block';
-      } else {
-        document.getElementById('auth').style.display = 'block';
-        document.getElementById('keyGate').style.display = 'none';
-        show('home');
+        document.getElementById('authScreen').style.display='none';
+        document.getElementById('keyScreen').style.display='block';
       }
     });
-
-    // --- validate key ---
-    async function validateKey(){
-      const key = document.getElementById('userKey').value.trim();
-      if(!key) return alert('Enter key');
-      const res = await fetch(BACKEND + '/validate_key', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key})});
-      const d = await res.json();
-      if(d.valid){
-        alert('Unlocked');
-        sessionStorage.setItem('active_key', key);
-        document.getElementById('keyGate').style.display = 'none';
-        show('home');
-        subscribeRealtime();
-        loadSignals();
-        loadTransactions();
-        listenNotificationsForKey(key);
-        // if user is owner check admin privileges
-        if(d.role === 'owner') document.getElementById('admin').style.display = 'block';
-      } else {
-        alert('Invalid key: ' + (d.reason || 'unknown'));
-      }
-    }
-
-    // --- charts ---
-    let chart, series;
-    async function loadChart(){
-      const symbol = document.getElementById('chartSymbol').value || 'BTC/USDT';
-      const tf = document.getElementById('chartTf').value || '1m';
-      const url = `${BACKEND}/ohlc?symbol=${encodeURIComponent(symbol)}&tf=${tf}&limit=200`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if(data.error) return alert('Chart error: ' + data.error);
-      const formatted = (data.data || []).map(d=>({ time: Math.floor(d[0]/1000), open:d[1], high:d[2], low:d[3], close:d[4] }));
-      const container = document.getElementById('chart');
-      container.innerHTML = '';
-      chart = LightweightCharts.createChart(container, { layout: { background: '#0f1724', textColor:'#e6eef8' }});
-      series = chart.addCandlestickSeries();
-      series.setData(formatted);
-    }
-
-    // --- signals ---
-    async function loadSignals(){
-      const res = await fetch(BACKEND + '/signals?limit=50');
-      const arr = await res.json();
-      const el = document.getElementById('signalsList'); el.innerHTML = '';
-      arr.forEach(s=>{
-        const li = document.createElement('li'); li.className='item';
-        li.innerHTML = `<div><strong>${s.symbol}</strong><div class="small">${s.signal} • ${s.timestamp}</div></div><div>${s.meta?.last_price || ''}</div>`;
-        el.appendChild(li);
-      });
-    }
-
-    // realtime subscriptions (basic)
-    function subscribeRealtime(){
-      db.collection('signals').orderBy('timestamp','desc').limit(20).onSnapshot(loadSignals);
-    }
-
-    // --- watchlist & search ---
-    let watchlist = [];
-    function addToWatchlist(){
-      const s = document.getElementById('searchInput').value.trim();
-      if(!s) return alert('Enter symbol');
-      watchlist.unshift(s); renderWatchlist();
-    }
-    function renderWatchlist(){
-      const el = document.getElementById('watchlist'); el.innerHTML = '';
-      watchlist.forEach(sym=>{
-        const li = document.createElement('li'); li.className='item';
-        li.innerHTML = `<div>${sym}</div><div><button onclick="document.getElementById('chartSymbol').value='${sym}'; loadChart()">View</button></div>`;
-        el.appendChild(li);
-      });
-    }
-
-    // --- notifications for active key ---
-    function listenNotificationsForKey(key){
-      db.collection('notifications').where('key','==',key).orderBy('timestamp','desc').limit(50).onSnapshot(snap=>{
-        const el = document.getElementById('notifList'); el.innerHTML = '';
-        snap.forEach(d=>{
-          const n = d.data();
-          const li = document.createElement('li'); li.className='item';
-          li.innerHTML = `<div><strong>${n.signal?.meta?.symbol || '-'}</strong><div class="small">${n.message || ''} • ${n.timestamp}</div></div><div>${n.signal?.signal || ''}</div>`;
-          el.appendChild(li);
-          // mobile popup
-          if(n.message) setTimeout(()=>alert('🔔 ' + (n.message || 'signal')), 200);
-        });
-      });
-    }
-
-    // --- broker connect ---
-    async function connectBroker(){
-      const user = auth.currentUser; if(!user) return alert('Login required');
-      const broker = document.getElementById('brokerSelect').value.trim().toLowerCase();
-      const api = document.getElementById('brokerApiKey').value.trim();
-      const secret = document.getElementById('brokerSecret').value.trim();
-      if(!broker || !api || !secret) return alert('Fill broker, api and secret');
-      await db.collection('users').doc(user.uid).set({ brokers: { [broker]: { api, secret } } }, { merge: true });
-      alert('Broker saved: ' + broker);
-    }
-
-    // --- deposit / withdraw ---
-    async function deposit(){
-      const broker = (document.getElementById('brokerSelect').value || '').trim().toLowerCase();
-      const amount = parseFloat(document.getElementById('amount').value || '0');
-      if(!broker || !amount) return alert('Select broker and amount');
-      const user = auth.currentUser;
-      const payload = { user: user ? (user.email || user.uid) : 'guest', broker, amount };
-      const res = await fetch(BACKEND + '/deposit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      const d = await res.json();
-      if(d.status === 'redirect' && d.redirect_url) window.open(d.redirect_url, '_blank');
-      else alert('Deposit: ' + (d.status || JSON.stringify(d)));
-      loadTransactions();
-    }
-    async function withdraw(){
-      const broker = (document.getElementById('brokerSelect').value || '').trim().toLowerCase();
-      const amount = parseFloat(document.getElementById('amount').value || '0');
-      if(!broker || !amount) return alert('Select broker and amount');
-      const user = auth.currentUser;
-      const payload = { user: user ? (user.email || user.uid) : 'guest', broker, amount };
-      const res = await fetch(BACKEND + '/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      const d = await res.json();
-      if(d.status === 'redirect' && d.redirect_url) window.open(d.redirect_url, '_blank');
-      else alert('Withdraw: ' + (d.status || JSON.stringify(d)));
-      loadTransactions();
-    }
-
-    // --- transactions list ---
-    async function loadTransactions(){
-      const el = document.getElementById('txList'); el.innerHTML = 'Loading...';
-      const snap = await db.collection('transactions').orderBy('created_at','desc').limit(20).get();
-      el.innerHTML = '';
-      snap.forEach(d=>{
-        const t = d.data();
-        const li = document.createElement('li'); li.className='item';
-        li.innerHTML = `<div>${t.type.toUpperCase()} ${t.amount} — ${t.broker}</div><div class="small">${t.status}</div>`;
-        el.appendChild(li);
-      });
-    }
-
-    // --- admin broadcast: fetch secret from Firestore at runtime (admin must be in admins collection) ---
-    let ADMIN_SECRET = null;
-    async function loadAdminSecretIfAdmin(){
-      const u = auth.currentUser;
-      if(!u) return;
-      // check admins collection first
-      const admDoc = await db.collection('admins').doc(u.uid).get();
-      if(!admDoc.exists) return; // not an admin
-      const cfg = await db.collection('admin').doc('config').get();
-      if(cfg.exists) ADMIN_SECRET = cfg.data().secret;
-      if(ADMIN_SECRET) document.getElementById('admin').style.display = 'block';
-    }
-
-    async function broadcast(){
-      if(!ADMIN_SECRET) return alert('Admin secret not loaded or you are not admin');
-      const body = { message: document.getElementById('adminMessage').value, symbol: document.getElementById('adminSymbol').value, signal: document.getElementById('adminSignal').value, price: document.getElementById('adminPrice').value };
-      const res = await fetch(BACKEND + '/send_notification', { method:'POST', headers: { 'Content-Type':'application/json', 'X-Admin-Secret': ADMIN_SECRET }, body: JSON.stringify(body) });
-      const data = await res.json();
-      if(res.ok) alert('Broadcast sent to ' + (data.sent_to || data.sent));
-      else alert('Broadcast failed: ' + (data.error || JSON.stringify(data)));
-    }
-
-    // when user logs in, try to load admin secret
-    auth.onAuthStateChanged(async u=>{
-      if(u){
-        await loadAdminSecretIfAdmin();
-      } else {
-        ADMIN_SECRET = null;
-        document.getElementById('admin').style.display = 'none';
-      }
-    });
-
-    // subscribe realtime on signals
-    function subscribeRealtimeAfterUnlock(){
-      db.collection('signals').orderBy('timestamp','desc').limit(20).onSnapshot(loadSignals);
-    }
-
-    // small init: hide admin and other sections
-    ['home','search','notifications','account','admin'].forEach(s => document.getElementById(s).style.display = 'none');
   </script>
 </body>
-        </html>
+      </html>
