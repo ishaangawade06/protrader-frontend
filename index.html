@@ -14,11 +14,12 @@
     .locked { filter: blur(6px); pointer-events: none; }
     .center-lock { display:flex; justify-content:center; align-items:center; height:70vh; }
     .lock-btn { font-size:40px; cursor:pointer; }
+    .balance-box { background:#1f2937; padding:10px; border-radius:8px; margin-bottom:10px; }
   </style>
 </head>
 <body class="p-4">
 
-  <!-- Auth screen -->
+  <!-- Auth -->
   <div id="authScreen" class="screen active">
     <h2 class="text-xl font-bold mb-4">Welcome to ProTraderHack</h2>
     <input id="username" placeholder="Username (small letters/numbers)" class="w-full p-2 mb-2 rounded bg-gray-900" />
@@ -33,8 +34,15 @@
   <div id="homeScreen" class="screen locked">
     <div id="homeLock" class="center-lock"><span class="lock-btn">🔒</span></div>
     <div id="homeContent" style="display:none;">
-      <h2 class="text-xl font-bold">📈 Home</h2>
-      <p>Your charts and watchlist will show here.</p>
+      <h2 class="text-xl font-bold mb-4">📈 Home</h2>
+      <div id="balances"></div>
+      <div class="mt-4">
+        <h3 class="font-semibold">Quick Trade</h3>
+        <input id="tradeSymbol" placeholder="Symbol (e.g. BTCUSDT)" class="w-full p-2 mb-2 rounded bg-gray-900" />
+        <input id="tradeAmount" placeholder="Amount" class="w-full p-2 mb-2 rounded bg-gray-900" />
+        <button onclick="placeOrder('buy')" class="w-full py-2 mb-2 rounded bg-green-600">Buy</button>
+        <button onclick="placeOrder('sell')" class="w-full py-2 rounded bg-red-600">Sell</button>
+      </div>
     </div>
   </div>
 
@@ -62,10 +70,10 @@
     <h2 class="text-xl font-bold">👤 Account</h2>
     <p>Connect your broker below:</p>
     <div id="brokersList">
-      <div id="zerodhaBalance">Zerodha: <button onclick="connectBroker('zerodha')">Connect Broker</button></div>
-      <div id="angelBalance">AngelOne: <button onclick="connectBroker('angelone')">Connect Broker</button></div>
-      <div id="binanceBalance">Binance: <button onclick="connectBroker('binance')">Connect Broker</button></div>
-      <div id="exnessBalance">Exness: <button onclick="connectBroker('exness')">Connect Broker</button></div>
+      <div id="zerodhaBalance">Zerodha: <span class="bal">Connect Broker</span> <button onclick="connectBroker('zerodha')">Connect</button></div>
+      <div id="angelBalance">AngelOne: <span class="bal">Connect Broker</span> <button onclick="connectBroker('angelone')">Connect</button></div>
+      <div id="binanceBalance">Binance: <span class="bal">Connect Broker</span> <button onclick="connectBroker('binance')">Connect</button></div>
+      <div id="exnessBalance">Exness: <span class="bal">Connect Broker</span> <button onclick="connectBroker('exness')">Connect</button></div>
     </div>
     <hr class="my-3 border-gray-700" />
     <h3 class="font-semibold mb-2">Funds</h3>
@@ -96,12 +104,16 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
+    const BACKEND = "https://protrader-backend-sbus.onrender.com";
+
     function showScreen(id){
       document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
+      if(id==="homeScreen") refreshBalances();
+      if(id==="accountScreen") refreshBalances();
     }
 
-    // Lock/unlock
+    // Unlock logic
     document.querySelector("#homeLock .lock-btn").onclick = ()=>unlock('home');
     document.querySelector("#searchLock .lock-btn").onclick = ()=>unlock('search');
     document.querySelector("#adminLock .lock-btn").onclick = ()=>unlock('admin');
@@ -113,27 +125,21 @@
 
       if(type==="home" || type==="search"){
         if(key in userKeys){
-          document.getElementById("homeScreen").classList.remove("locked");
-          document.getElementById("homeLock").style.display="none";
-          document.getElementById("homeContent").style.display="block";
-          document.getElementById("searchScreen").classList.remove("locked");
-          document.getElementById("searchLock").style.display="none";
-          document.getElementById("searchContent").style.display="block";
+          ["home","search"].forEach(sec=>{
+            document.getElementById(sec+"Screen").classList.remove("locked");
+            document.getElementById(sec+"Lock").style.display="none";
+            document.getElementById(sec+"Content").style.display="block";
+          });
           alert("✅ Home & Search unlocked!");
-        } else {
-          alert("❌ Invalid key");
-        }
+        } else alert("❌ Invalid key");
       }
-
       if(type==="admin"){
         if(adminKeys.includes(key)){
           document.getElementById("adminScreen").classList.remove("locked");
           document.getElementById("adminLock").style.display="none";
           document.getElementById("adminContent").style.display="block";
           alert("✅ Admin unlocked!");
-        } else {
-          alert("❌ Invalid admin key");
-        }
+        } else alert("❌ Invalid admin key");
       }
     }
 
@@ -144,6 +150,7 @@
       const pass = document.getElementById('password').value;
       if(!/^[a-z0-9]{1,12}$/.test(user)){ alert("Invalid username!"); return; }
       await auth.createUserWithEmailAndPassword(email,pass);
+      localStorage.setItem("uid", auth.currentUser.uid);
       localStorage.setItem("username", user);
       showScreen('homeScreen');
     };
@@ -152,19 +159,87 @@
       const email = document.getElementById('email').value;
       const pass = document.getElementById('password').value;
       await auth.signInWithEmailAndPassword(email,pass);
+      localStorage.setItem("uid", auth.currentUser.uid);
       showScreen('homeScreen');
     };
 
     document.getElementById('googleBtn').onclick = async ()=>{
       const provider = new firebase.auth.GoogleAuthProvider();
       await auth.signInWithPopup(provider);
+      localStorage.setItem("uid", auth.currentUser.uid);
       showScreen('homeScreen');
     };
 
-    // Broker logic (placeholder)
-    function connectBroker(name){ alert("🔗 Connecting "+name+"..."); }
-    function deposit(){ alert("💰 Deposit flow starting..."); }
-    function withdraw(){ alert("💸 Withdraw flow starting..."); }
+    // Broker interactions
+    async function connectBroker(name){
+      const uid = localStorage.getItem("uid");
+      if(!uid) return alert("Login first");
+      await fetch(`${BACKEND}/broker/connect`,{
+        method:"POST", headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({uid,broker:name,api_key:"demo",secret:"demo"})
+      });
+      refreshBalances();
+    }
+
+    async function refreshBalances(){
+      const uid = localStorage.getItem("uid");
+      const balancesDiv = document.getElementById("balances");
+      balancesDiv.innerHTML = "";
+      for(const b of ["zerodha","angelone","binance","exness"]){
+        const res = await fetch(`${BACKEND}/balance`,{
+          method:"POST", headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({uid,broker:b})
+        });
+        const d = await res.json();
+        balancesDiv.innerHTML += `<div class="balance-box">${b.toUpperCase()}: ${d.balance || "Connect Broker"}</div>`;
+        document.querySelector(`#${b}Balance .bal`).innerText = d.balance || "Connect Broker";
+      }
+    }
+
+    async function deposit(){
+      const uid = localStorage.getItem("uid");
+      const broker = prompt("Which broker? (zerodha/angelone/binance/exness)");
+      const amount = prompt("Enter amount");
+      const res = await fetch(`${BACKEND}/deposit`,{
+        method:"POST", headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({uid,broker,amount})
+      });
+      const d = await res.json();
+      if(d.redirect) window.location.href = d.redirect;
+      else alert("Deposit "+d.status);
+      refreshBalances();
+    }
+
+    async function withdraw(){
+      const uid = localStorage.getItem("uid");
+      const broker = prompt("Which broker? (zerodha/angelone/binance/exness)");
+      const amount = prompt("Enter amount");
+      const res = await fetch(`${BACKEND}/withdraw`,{
+        method:"POST", headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({uid,broker,amount})
+      });
+      const d = await res.json();
+      if(d.redirect) window.location.href = d.redirect;
+      else alert("Withdraw "+d.status);
+      refreshBalances();
+    }
+
+    async function placeOrder(side){
+      const uid = localStorage.getItem("uid");
+      const broker = prompt("Which broker to trade on? (zerodha/angelone/binance/exness)");
+      const symbol = document.getElementById("tradeSymbol").value;
+      const amount = document.getElementById("tradeAmount").value;
+      const res = await fetch(`${BACKEND}/trade`,{
+        method:"POST", headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({uid,broker,symbol,amount,side})
+      });
+      const d = await res.json();
+      alert(`${side.toUpperCase()} order ${d.status}`);
+      refreshBalances();
+    }
+
+    // Auto refresh balances every 60s
+    setInterval(refreshBalances, 60000);
   </script>
 </body>
-</html>
+        </html>
