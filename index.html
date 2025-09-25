@@ -3,102 +3,90 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PTH App</title>
+  <title>ProTraderHack</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
     body { background:#0b1220; color:#e6eef8; font-family:Inter,Arial; }
-    .card{background:#0f1724;padding:16px;border-radius:10px;}
-    .hidden{display:none;}
-    .blurred { filter: blur(6px); }
-    video { width:100%; border-radius:12px; }
-    nav { position:fixed; bottom:0; left:0; right:0; background:#0f1724; display:flex; justify-content:space-around; padding:10px; }
-    nav button { flex:1; padding:8px; }
+    .screen { display:none; padding:16px; }
+    .active { display:block; }
+    .nav { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:space-around; background:#111827; padding:10px; }
+    .nav button { flex:1; padding:8px; font-size:14px; }
+    .locked { filter: blur(6px); pointer-events: none; }
+    .center-lock { display:flex; justify-content:center; align-items:center; height:70vh; }
+    .lock-btn { font-size:40px; cursor:pointer; }
   </style>
 </head>
 <body class="p-4">
 
-  <!-- Intro Video -->
-  <div id="introScreen" class="card">
-    <video id="introVideo" autoplay>
-      <source src="VID-20250904-WA0075.mp4" type="video/mp4">
-    </video>
-    <button id="skipIntro" class="w-full mt-3 py-2 bg-blue-600 rounded">Skip</button>
-  </div>
-
-  <!-- Login / Signup -->
-  <div id="authScreen" class="card hidden">
-    <h2 class="text-lg font-semibold mb-3">Sign Up / Login</h2>
-    <input id="username" type="text" placeholder="Username (max 12, lowercase)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900" />
+  <!-- Auth screen -->
+  <div id="authScreen" class="screen active">
+    <h2 class="text-xl font-bold mb-4">Welcome to ProTraderHack</h2>
+    <input id="username" placeholder="Username (small letters/numbers)" class="w-full p-2 mb-2 rounded bg-gray-900" />
+    <input id="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900" />
     <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <button id="signupBtn" class="w-full py-2 bg-green-600 rounded mb-2">Sign Up</button>
-    <button id="loginBtn" class="w-full py-2 bg-blue-600 rounded mb-2">Login</button>
-    <button id="googleLogin" class="w-full py-2 bg-red-600 rounded mb-2">Login with Google</button>
-
-    <hr class="my-3 border-gray-700"/>
-    <input id="phoneNumber" type="text" placeholder="+91xxxxxxxxxx" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <div id="recaptcha-container"></div>
-    <button id="sendOtpBtn" class="w-full py-2 bg-yellow-600 rounded">Send OTP</button>
-    <input id="otpCode" type="text" placeholder="Enter OTP" class="w-full p-2 mt-2 rounded bg-gray-900" />
-    <button id="verifyOtpBtn" class="w-full py-2 bg-green-600 rounded mt-2">Verify OTP</button>
+    <button id="signupBtn" class="w-full py-2 mb-2 rounded bg-green-600">Sign Up</button>
+    <button id="loginBtn" class="w-full py-2 mb-2 rounded bg-blue-600">Log In</button>
+    <button id="googleBtn" class="w-full py-2 mb-2 rounded bg-red-600">Continue with Google</button>
   </div>
 
-  <!-- Key Unlock Screen -->
-  <div id="keyScreen" class="card hidden">
-    <h2 class="text-lg font-semibold mb-3">Enter Access Key 🔑</h2>
-    <input id="accessKey" type="text" placeholder="Enter key" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <button id="unlockBtn" class="w-full py-2 bg-blue-600 rounded">Unlock</button>
-  </div>
-
-  <!-- Home Screen -->
-  <div id="homeScreen" class="hidden">
-    <div class="card blurred" id="homeContent">
-      <h2 class="text-lg font-semibold mb-3">Home</h2>
-      <p id="balance">Balance: --</p>
-      <button class="py-2 px-3 bg-green-600 rounded">Buy</button>
-      <button class="py-2 px-3 bg-red-600 rounded">Sell</button>
-    </div>
-    <div class="text-center mt-6">
-      <button id="unlockEmoji" class="text-6xl">🔒</button>
+  <!-- Home -->
+  <div id="homeScreen" class="screen locked">
+    <div id="homeLock" class="center-lock"><span class="lock-btn">🔒</span></div>
+    <div id="homeContent" style="display:none;">
+      <h2 class="text-xl font-bold">📈 Home</h2>
+      <p>Your charts and watchlist will show here.</p>
     </div>
   </div>
 
-  <!-- Search Screen -->
-  <div id="searchScreen" class="hidden card">
-    <input id="searchBox" placeholder="Search symbol..." class="w-full p-2 mb-3 rounded bg-gray-900" />
-    <ul id="results"></ul>
+  <!-- Search -->
+  <div id="searchScreen" class="screen locked">
+    <div id="searchLock" class="center-lock"><span class="lock-btn">🔒</span></div>
+    <div id="searchContent" style="display:none;">
+      <h2 class="text-xl font-bold">🔍 Search</h2>
+      <input id="searchBar" placeholder="Search symbol..." class="w-full p-2 mb-2 rounded bg-gray-900" />
+      <div id="searchResults"></div>
+    </div>
   </div>
 
-  <!-- Account Screen -->
-  <div id="accountScreen" class="hidden card">
-    <h2 class="font-semibold mb-2">Account</h2>
-    <input placeholder="API Key" class="w-full p-2 mb-2 rounded bg-gray-900"/>
-    <input placeholder="Secret Key" class="w-full p-2 mb-2 rounded bg-gray-900"/>
-    <button class="w-full py-2 bg-green-600 rounded mb-2">Connect Broker</button>
-    <button id="depositBtn" class="w-full py-2 bg-blue-600 rounded mb-2">Deposit</button>
-    <button id="withdrawBtn" class="w-full py-2 bg-red-600 rounded">Withdraw</button>
+  <!-- Admin -->
+  <div id="adminScreen" class="screen locked">
+    <div id="adminLock" class="center-lock"><span class="lock-btn">🔒</span></div>
+    <div id="adminContent" style="display:none;">
+      <h2 class="text-xl font-bold">⚙️ Admin Panel</h2>
+      <p>Manage keys and users here (admin only).</p>
+    </div>
   </div>
 
-  <!-- Admin Screen -->
-  <div id="adminScreen" class="hidden card">
-    <h2 class="text-lg font-semibold mb-3">Admin Panel</h2>
-    <p>Only admins with special keys can manage users/keys.</p>
+  <!-- Account -->
+  <div id="accountScreen" class="screen">
+    <h2 class="text-xl font-bold">👤 Account</h2>
+    <p>Connect your broker below:</p>
+    <div id="brokersList">
+      <div id="zerodhaBalance">Zerodha: <button onclick="connectBroker('zerodha')">Connect Broker</button></div>
+      <div id="angelBalance">AngelOne: <button onclick="connectBroker('angelone')">Connect Broker</button></div>
+      <div id="binanceBalance">Binance: <button onclick="connectBroker('binance')">Connect Broker</button></div>
+      <div id="exnessBalance">Exness: <button onclick="connectBroker('exness')">Connect Broker</button></div>
+    </div>
+    <hr class="my-3 border-gray-700" />
+    <h3 class="font-semibold mb-2">Funds</h3>
+    <button onclick="deposit()" class="w-full py-2 mb-2 rounded bg-green-600">Deposit</button>
+    <button onclick="withdraw()" class="w-full py-2 rounded bg-red-600">Withdraw</button>
   </div>
 
-  <!-- Navigation -->
-  <nav class="hidden" id="bottomNav">
+  <!-- Bottom nav -->
+  <div class="nav">
     <button onclick="showScreen('homeScreen')">Home</button>
     <button onclick="showScreen('searchScreen')">Search</button>
     <button onclick="showScreen('adminScreen')">Admin</button>
     <button onclick="showScreen('accountScreen')">Account</button>
-  </nav>
+  </div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script>
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
+      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
       projectId: "protraderhack-d67f0",
       storageBucket: "protraderhack-d67f0.appspot.com",
@@ -108,72 +96,75 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // --- Navigation ---
     function showScreen(id){
-      document.querySelectorAll('#homeScreen,#searchScreen,#accountScreen,#adminScreen')
-        .forEach(el=>el.style.display='none');
-      document.getElementById(id).style.display='block';
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
     }
 
-    // --- Intro Skip ---
-    document.getElementById('skipIntro').onclick = ()=>{
-      document.getElementById('introScreen').style.display='none';
-      document.getElementById('authScreen').style.display='block';
-    };
+    // Lock/unlock
+    document.querySelector("#homeLock .lock-btn").onclick = ()=>unlock('home');
+    document.querySelector("#searchLock .lock-btn").onclick = ()=>unlock('search');
+    document.querySelector("#adminLock .lock-btn").onclick = ()=>unlock('admin');
 
-    // --- Login / Signup ---
-    document.getElementById('signupBtn').onclick = async ()=>{
-      const u = document.getElementById('username').value;
-      if(!/^[a-z0-9]{1,12}$/.test(u)) { alert("Invalid username"); return; }
-      const e = document.getElementById('email').value;
-      const p = document.getElementById('password').value;
-      try { await auth.createUserWithEmailAndPassword(e,p); } catch(err){ alert(err.message); }
-    };
-    document.getElementById('loginBtn').onclick = async ()=>{
-      const e = document.getElementById('email').value;
-      const p = document.getElementById('password').value;
-      try { await auth.signInWithEmailAndPassword(e,p); } catch(err){ alert(err.message); }
-    };
-    document.getElementById('googleLogin').onclick = async ()=>{
-      try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch(err){ alert(err.message); }
-    };
+    function unlock(type){
+      const key = prompt("Enter unlock key:");
+      const userKeys = { "pth7":7, "key15":15, "ishaan30":30, "splkey50":50, "ishaan":"perm" };
+      const adminKeys = ["vamya","pthowner16"];
 
-    // --- Key Unlock ---
-    document.getElementById('unlockBtn').onclick = ()=>{
-      const k = document.getElementById('accessKey').value;
-      const validKeys = {
-        "pth7":7, "key15":15, "ishaan30":30, "splkey50":50, "ishaan":"perm",
-        "vamya":"admin", "pthowner16":"admin"
-      };
-      if(validKeys[k]){
-        document.getElementById('keyScreen').style.display='none';
-        document.getElementById('homeScreen').style.display='block';
-        document.getElementById('bottomNav').style.display='flex';
-        if(validKeys[k]==="admin"){ showScreen('adminScreen'); }
-      } else { alert("Invalid Key"); }
-    };
-
-    // --- Unlock Emoji ---
-    document.getElementById('unlockEmoji').onclick = ()=>{
-      document.getElementById('homeContent').classList.remove('blurred');
-      alert("Home & Search Unlocked!");
-    };
-
-    // --- Deposit / Withdraw ---
-    document.getElementById('depositBtn').onclick = ()=>{
-      alert("Redirecting to broker deposit page...");
-    };
-    document.getElementById('withdrawBtn').onclick = ()=>{
-      alert("Redirecting to broker withdraw page...");
-    };
-
-    // --- Auth State ---
-    auth.onAuthStateChanged(user=>{
-      if(user){
-        document.getElementById('authScreen').style.display='none';
-        document.getElementById('keyScreen').style.display='block';
+      if(type==="home" || type==="search"){
+        if(key in userKeys){
+          document.getElementById("homeScreen").classList.remove("locked");
+          document.getElementById("homeLock").style.display="none";
+          document.getElementById("homeContent").style.display="block";
+          document.getElementById("searchScreen").classList.remove("locked");
+          document.getElementById("searchLock").style.display="none";
+          document.getElementById("searchContent").style.display="block";
+          alert("✅ Home & Search unlocked!");
+        } else {
+          alert("❌ Invalid key");
+        }
       }
-    });
+
+      if(type==="admin"){
+        if(adminKeys.includes(key)){
+          document.getElementById("adminScreen").classList.remove("locked");
+          document.getElementById("adminLock").style.display="none";
+          document.getElementById("adminContent").style.display="block";
+          alert("✅ Admin unlocked!");
+        } else {
+          alert("❌ Invalid admin key");
+        }
+      }
+    }
+
+    // Auth
+    document.getElementById('signupBtn').onclick = async ()=>{
+      const user = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('password').value;
+      if(!/^[a-z0-9]{1,12}$/.test(user)){ alert("Invalid username!"); return; }
+      await auth.createUserWithEmailAndPassword(email,pass);
+      localStorage.setItem("username", user);
+      showScreen('homeScreen');
+    };
+
+    document.getElementById('loginBtn').onclick = async ()=>{
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('password').value;
+      await auth.signInWithEmailAndPassword(email,pass);
+      showScreen('homeScreen');
+    };
+
+    document.getElementById('googleBtn').onclick = async ()=>{
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await auth.signInWithPopup(provider);
+      showScreen('homeScreen');
+    };
+
+    // Broker logic (placeholder)
+    function connectBroker(name){ alert("🔗 Connecting "+name+"..."); }
+    function deposit(){ alert("💰 Deposit flow starting..."); }
+    function withdraw(){ alert("💸 Withdraw flow starting..."); }
   </script>
 </body>
-      </html>
+</html>
