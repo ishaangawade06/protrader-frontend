@@ -1,265 +1,413 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProTraderHack (PTH)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ProTraderHack</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: Arial, sans-serif;
-      background: #0b0e11;
-      color: white;
-      overflow: hidden;
-    }
-
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .skip-btn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      font-size: 14px;
-      padding: 6px 12px;
-      background: rgba(0,0,0,0.6);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    .skip-btn:hover {
-      background: rgba(255,255,255,0.8);
-      color: #000;
-    }
-
-    /* Hidden sections until unlocked */
-    .screen {
-      display: none;
-      height: 100%;
-      overflow: auto;
-      padding: 20px;
-    }
-
-    .nav {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-around;
-      background: #111;
-      padding: 10px 0;
-      border-top: 1px solid #333;
-    }
-
-    .nav button {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    .lock {
-      font-size: 50px;
-      text-align: center;
-      margin-top: 40%;
-      cursor: pointer;
-    }
-
-    .wallet-popup {
-      display: none;
-      position: fixed;
-      top: 20%;
-      left: 50%;
-      transform: translate(-50%, -20%);
-      background: #1a1d21;
-      padding: 20px;
-      border-radius: 8px;
-      width: 300px;
-    }
-    .wallet-popup h3 {
-      margin-top: 0;
-    }
-    .wallet-popup .close {
-      cursor: pointer;
-      float: right;
-      color: red;
-    }
+    body{font-family:Inter,Arial;background:#041026;color:#e6eef8;margin:0;padding-bottom:72px}
+    .center{display:flex;align-items:center;justify-content:center;height:100vh}
+    .skip-btn{position:absolute;bottom:16px;right:16px;background:rgba(0,0,0,0.6);color:#fff;padding:8px 10px;border-radius:8px;border:0}
+    .nav{position:fixed;bottom:0;left:0;right:0;background:#0f1724;padding:10px;display:flex;gap:8px}
+    .nav button{flex:1;background:#0b1220;border-radius:8px;padding:8px;border:0;color:#cbd5e1}
+    .card{background:#071428;padding:12px;border-radius:12px;margin:12px}
   </style>
 </head>
 <body>
 
-  <!-- Intro Video -->
-  <div id="intro-screen">
-    <video id="introVideo" autoplay playsinline>
-      <source src="VID-20250904-WA0075.mp4" type="video/mp4">
-      Your browser does not support the video tag.
+  <!-- Intro -->
+  <div id="intro" class="center">
+    <video id="introVideo" playsinline autoplay style="width:100%;max-width:600px;border-radius:12px">
+      <source src="VID-20250904-WA0075.mp4" type="video/mp4" />
     </video>
-    <button class="skip-btn" onclick="goNext()">Skip</button>
+    <button id="skipIntro" class="skip-btn">Skip</button>
   </div>
 
-  <!-- Signup/Login Screen -->
-  <div id="auth-screen" class="screen">
-    <h2>Welcome to ProTraderHack</h2>
-    <p>Create an account or login to continue</p>
-    <button onclick="signupWithEmail()">Sign up with Email</button>
-    <button onclick="signupWithGoogle()">Sign up with Google</button>
-    <button onclick="signupWithPhone()">Sign up with Phone</button>
-    <p style="margin-top:20px;">
-      <a href="#" onclick="loginPage()">Already have an account? Login</a>
-    </p>
-  </div>
-
-  <!-- Home Screen -->
-  <div id="home-screen" class="screen">
-    <h2>Home</h2>
-    <div id="home-lock" class="lock" onclick="unlockHome()">🔒</div>
-    <div id="home-content" style="display:none;">
-      <div style="text-align:right;">
-        <span style="cursor:pointer;" onclick="toggleWallet()">💰 Wallet</span>
+  <!-- Auth -->
+  <div id="auth" class="card hidden" style="max-width:680px;margin:20px auto">
+    <h2 class="text-2xl font-bold">Welcome to ProTraderHack</h2>
+    <div style="margin-top:12px">
+      <input id="email" placeholder="Email" class="w-full p-3 rounded bg-[#0b1220]" />
+      <input id="password" type="password" placeholder="Password" class="w-full p-3 rounded bg-[#0b1220] mt-3" />
+      <input id="username" placeholder="username (a-z0-9, ≤12 chars)" class="w-full p-3 rounded bg-[#0b1220] mt-3" />
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="signupBtn" class="px-4 py-2 rounded" style="background:#10b981">Sign up</button>
+        <button id="loginBtn" class="px-4 py-2 rounded" style="background:#2563eb">Login</button>
       </div>
-      <div id="chart">
-        <!-- TradingView chart embed -->
-        <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview-widget"
-                style="width:100%; height:400px; border:none;">
-        </iframe>
-      </div>
-      <div style="margin-top:10px; display:flex; justify-content:space-between;">
-        <button>Buy</button>
-        <button>Sell</button>
-        <span>📊 Signal: Hold</span>
+      <div style="margin-top:8px">
+        <button id="googleBtn" class="px-3 py-2 rounded" style="background:#ef4444">Continue with Google</button>
       </div>
     </div>
   </div>
 
-  <!-- Search Screen -->
-  <div id="search-screen" class="screen">
-    <h2>Search</h2>
-    <div id="search-lock" class="lock" onclick="unlockSearch()">🔒</div>
-    <div id="search-content" style="display:none;">
-      <input type="text" placeholder="Search stocks/crypto/forex">
-      <button>Add to Watchlist</button>
+  <!-- Main app -->
+  <div id="app" class="hidden" style="max-width:900px;margin:12px auto">
+    <!-- Home -->
+    <div id="home" class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 class="text-xl font-bold">Home</h3>
+        <div><button id="walletBtn" class="px-3 py-1 rounded" style="background:#0b1220">Wallet</button></div>
+      </div>
+
+      <div id="homeLock" style="text-align:center;padding:48px"><span style="font-size:48px;cursor:pointer" id="homeLockBtn">🔒</span></div>
+
+      <div id="homeContent" class="hidden">
+        <div id="chart" style="height:360px;background:#000;border-radius:8px;margin-top:12px"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <div>
+            <button id="buyBtn" class="px-4 py-2 rounded" style="background:#10b981">Buy</button>
+            <button id="sellBtn" class="px-4 py-2 rounded" style="background:#ef4444">Sell</button>
+          </div>
+          <div id="signalBadge" style="padding:8px;border-radius:8px;background:#0b1220">HOLD</div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- Admin Screen -->
-  <div id="admin-screen" class="screen">
-    <h2>Admin Panel</h2>
-    <div id="admin-lock" class="lock" onclick="unlockAdmin()">🔒</div>
-    <div id="admin-content" style="display:none;">
-      <h3>Manage Keys</h3>
-      <button>Create Key</button>
-      <button>Delete Key</button>
-      <h3>Users</h3>
-      <ul id="user-list">
-        <li>user1 - key15 (12h left)</li>
-      </ul>
+    <!-- Search -->
+    <div id="search" class="card hidden">
+      <div style="display:flex;gap:8px">
+        <input id="searchInput" class="w-full p-3 rounded bg-[#0b1220]" placeholder="Search symbol (e.g. BTC/USDT)" />
+        <button id="addToWatch" class="px-4 py-2 rounded" style="background:#2563eb">Add</button>
+      </div>
+      <div id="searchResults" style="margin-top:8px"></div>
     </div>
+
+    <!-- Admin -->
+    <div id="admin" class="card hidden">
+      <h3>Admin</h3>
+      <div style="display:flex;gap:8px">
+        <input id="adminKey" placeholder="Admin key" class="p-2 rounded bg-[#0b1220]" />
+        <button id="adminUnlock" class="px-3 py-2 rounded" style="background:#10b981">Unlock</button>
+      </div>
+      <div id="adminArea" class="hidden" style="margin-top:12px">
+        <div style="display:flex;gap:8px">
+          <input id="newKey" placeholder="new key" class="p-2 rounded bg-[#0b1220]" />
+          <select id="newKeyDays" class="p-2 rounded bg-[#0b1220]">
+            <option value="">Permanent</option><option value="1">1 day</option><option value="7">7 days</option><option value="30">30 days</option><option value="50">50 days</option>
+          </select>
+          <button id="createKeyBtn" class="px-3 py-2 rounded" style="background:#2563eb">Create</button>
+        </div>
+        <div id="keysList" style="margin-top:12px"></div>
+        <h4 style="margin-top:12px">Users</h4>
+        <div id="usersList" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- Account -->
+    <div id="account" class="card hidden">
+      <h3>Account</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>Zerodha <button class="connectBtn" data-broker="zerodha">Connect</button></div>
+        <div>AngelOne <button class="connectBtn" data-broker="angelone">Connect</button></div>
+        <div>Binance <button class="connectBtn" data-broker="binance">Connect</button></div>
+        <div>Exness <button class="connectBtn" data-broker="exness">Connect</button></div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Account Screen -->
-  <div id="account-screen" class="screen">
-    <h2>Account</h2>
-    <ul>
-      <li>Zerodha - <button>Connect</button></li>
-      <li>AngelOne - <button>Connect</button></li>
-      <li>Binance - <button>Connect</button></li>
-      <li>Exness - <button>Connect</button></li>
-    </ul>
+  <!-- wallet popup -->
+  <div id="walletPopup" class="card hidden" style="position:fixed;left:16px;right:16px;bottom:90px">
+    <div style="display:flex;justify-content:space-between">
+      <h4>Wallet</h4><div><button id="walletClose">Close</button></div>
+    </div>
+    <div id="walletBalances" style="margin-top:8px"></div>
   </div>
 
-  <!-- Wallet Popup -->
-  <div id="wallet-popup" class="wallet-popup">
-    <span class="close" onclick="toggleWallet()">✖</span>
-    <h3>Wallet Balances</h3>
-    <p>Zerodha: ₹-- <button>📌</button></p>
-    <p>AngelOne: ₹-- <button>📌</button></p>
-    <p>Binance: $-- <button>📌</button></p>
-    <p>Exness: $-- <button>📌</button></p>
+  <!-- bottom nav -->
+  <div class="nav" id="bottomNav" style="display:none">
+    <button onclick="openTab('home')">Home</button>
+    <button onclick="openTab('search')">Search</button>
+    <button onclick="openTab('admin')">Admin</button>
+    <button onclick="openTab('account')">Account</button>
   </div>
 
-  <!-- Bottom Navigation -->
-  <div class="nav" id="bottom-nav" style="display:none;">
-    <button onclick="showScreen('home')">Home</button>
-    <button onclick="showScreen('search')">Search</button>
-    <button onclick="showScreen('admin')">Admin</button>
-    <button onclick="showScreen('account')">Account</button>
-  </div>
+  <!-- firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
 
   <script>
-    const video = document.getElementById("introVideo");
+  // --------- CONFIG ----------
+  const BACKEND = "https://protrader-backend-sbus.onrender.com"; // update if changed
+  const VAPID_KEY = "YOUR_VAPID_PUBLIC_KEY_HERE"; // set from Firebase Console -> Cloud Messaging -> Web Push certs
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+    authDomain: "protraderhack-d67f0.firebaseapp.com",
+    projectId: "protraderhack-d67f0",
+    storageBucket: "protraderhack-d67f0.appspot.com",
+    messagingSenderId: "1062485216321",
+    appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const messaging = firebase.messaging();
 
-    // Force autoplay with sound
-    video.muted = false;
-    video.play().catch(() => {
-      video.muted = true;
-      video.play();
-    });
+  // --------- intro controls ----------
+  const intro = document.getElementById('intro');
+  const introVideo = document.getElementById('introVideo');
+  const skipIntro = document.getElementById('skipIntro');
 
-    // After video ends -> next
-    video.onended = () => {
-      goNext();
-    };
+  // autoplay with sound attempt
+  introVideo.muted = false;
+  introVideo.play().catch(()=>{ introVideo.muted = true; introVideo.play(); });
 
-    function goNext() {
-      document.getElementById("intro-screen").style.display = "none";
-      const loggedIn = localStorage.getItem("pth_user_logged_in");
-      if (loggedIn) {
-        openApp();
-      } else {
-        document.getElementById("auth-screen").style.display = "block";
+  function endIntroGotoAuth(){
+    intro.style.display='none';
+    document.getElementById('auth').classList.remove('hidden');
+  }
+  introVideo.onended = endIntroGotoAuth;
+  skipIntro.onclick = endIntroGotoAuth;
+
+  // --------- auth UI handlers ----------
+  document.getElementById('signupBtn').onclick = async ()=>{
+    const email = document.getElementById('email').value.trim();
+    const pass = document.getElementById('password').value;
+    const username = document.getElementById('username').value.trim();
+    if(!/^[a-z0-9]{1,12}$/.test(username)) return alert("Username invalid");
+    try {
+      const res = await auth.createUserWithEmailAndPassword(email, pass);
+      const uid = res.user.uid;
+      await db.collection('users').doc(uid).set({username, created: new Date().toISOString()});
+      postLoginSetup(uid);
+    } catch(e){ alert("Signup error: "+e.message); }
+  };
+  document.getElementById('loginBtn').onclick = async ()=>{
+    const email = document.getElementById('email').value.trim();
+    const pass = document.getElementById('password').value;
+    try {
+      const r = await auth.signInWithEmailAndPassword(email, pass);
+      postLoginSetup(r.user.uid);
+    } catch(e){ alert("Login error: "+e.message); }
+  };
+  document.getElementById('googleBtn').onclick = async ()=>{
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const r = await auth.signInWithPopup(provider);
+      const uid = r.user.uid;
+      // ensure username
+      const ud = await db.collection('users').doc(uid).get();
+      if(!ud.exists) await db.collection('users').doc(uid).set({username: r.user.displayName ? r.user.displayName.replace(/\s+/g,'').toLowerCase().slice(0,12) : 'user'+Date.now()});
+      postLoginSetup(uid);
+    } catch(e){ alert(e.message); }
+  };
+
+  // after login -> show app, ask for notifications if user has valid key
+  async function postLoginSetup(uid){
+    document.getElementById('auth').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('bottomNav').style.display='flex';
+    openTab('home');
+    // register service worker for FCM
+    if('serviceWorker' in navigator){
+      try{
+        await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      }catch(e){ console.warn('sw register failed', e); }
+    }
+    // get user watchlist from Firestore; if none create empty
+    const wDoc = await db.collection('users').doc(uid).collection('meta').doc('watchlist').get();
+    if(!wDoc.exists) await db.collection('users').doc(uid).collection('meta').doc('watchlist').set({items:[]});
+    // ask for notification permission only if user has a valid key
+    const keyValid = await checkKeyValidity(uid);
+    if(keyValid){
+      await requestNotificationPermission(uid);
+    }
+    await refreshBalances(uid);
+    loadAdminData();
+  }
+
+  async function checkKeyValidity(uid){
+    // basic check: see if user doc has key and expiry > now
+    const udoc = await db.collection('users').doc(uid).get();
+    if(!udoc.exists) return false;
+    const d = udoc.data() || {};
+    if(d.key && d.key_expiry){
+      try {
+        if(new Date(d.key_expiry) > new Date()) return true;
+      } catch(e){}
+    }
+    // fallback: ask backend validate endpoint if you implemented one
+    try {
+      const key = d.key || null;
+      if(!key) return false;
+      const res = await fetch(BACKEND + "/validate_key", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})});
+      const j = await res.json();
+      return j.valid === true;
+    } catch(e){ return false; }
+  }
+
+  async function requestNotificationPermission(uid){
+    try {
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted') return;
+      // get FCM token
+      const currentToken = await messaging.getToken({vapidKey: VAPID_KEY});
+      if(currentToken){
+        // send to backend to store
+        await fetch(BACKEND + "/save_fcm_token", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, token: currentToken})});
+        // also store locally in Firestore under user meta
+        await db.collection('users').doc(uid).collection('meta').doc('fcm').set({token: currentToken, created: new Date().toISOString()});
       }
+    } catch(e){
+      console.warn("notif permission error", e);
     }
+  }
 
-    function openApp() {
-      document.getElementById("auth-screen").style.display = "none";
-      document.getElementById("home-screen").style.display = "block";
-      document.getElementById("bottom-nav").style.display = "flex";
+  // handle incoming messages while page in foreground
+  messaging.onMessage(payload=>{
+    console.log("Message foreground", payload);
+    // Optionally show a custom toast
+    alert((payload.notification && payload.notification.title) ? payload.notification.title + "\n" + payload.notification.body : JSON.stringify(payload));
+  });
+
+  // register service worker file must be served at root: /firebase-messaging-sw.js
+  // We'll give the SW file content below.
+
+  // ---------- watchlist controls ----------
+  document.getElementById('addToWatch').onclick = async ()=>{
+    const symbol = document.getElementById('searchInput').value.trim();
+    if(!symbol) return alert("Enter symbol");
+    const uid = auth.currentUser.uid;
+    const wref = db.collection('users').doc(uid).collection('meta').doc('watchlist');
+    const wdoc = await wref.get();
+    let items = [];
+    if(wdoc.exists) items = wdoc.data().items || [];
+    if(!items.includes(symbol)) items.push(symbol.toUpperCase());
+    await wref.set({items, updated: new Date().toISOString()});
+    // send watchlist to backend as well to speed matching (optional)
+    await fetch(BACKEND + "/watchlist", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, items})});
+    alert(symbol + " added to watchlist");
+    document.getElementById('searchInput').value = '';
+  };
+
+  // ---------- publish_signal example (optional) ----------
+  // your signal worker will call backend /publish_signal to broadcast
+  // fetch(BACKEND + "/publish_signal", {method:'POST', body: JSON.stringify({symbol:'BTCUSDT', signal:'BUY', title:'Buy BTC', body:'Strong momentum'})})
+
+  // ---------- admin handlers ----------
+  document.getElementById('adminUnlock').onclick = async ()=>{
+    const k = document.getElementById('adminKey').value.trim();
+    if(!k) return alert("Enter admin key");
+    // validate locally against known admin keys OR call backend
+    if(k === 'vamya' || k === 'pthowner16'){
+      document.getElementById('adminArea').classList.remove('hidden');
+      loadAdminData();
+    } else {
+      alert("Invalid admin key");
     }
+  };
+  document.getElementById('createKeyBtn').onclick = async ()=>{
+    const newKey = document.getElementById('newKey').value.trim();
+    const days = document.getElementById('newKeyDays').value;
+    if(!newKey) return alert("enter key");
+    // call backend admin/create_key if available, else create in Firestore
+    const admin_key = document.getElementById('adminKey').value.trim();
+    try {
+      const res = await fetch(BACKEND + "/admin/create_key", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({admin_key, new_key: newKey, days: days || null})});
+      const j = await res.json();
+      if(j.created || j.ok) { alert("Created"); loadAdminData(); } else alert("Error: "+JSON.stringify(j));
+    } catch(e){ alert("create key error: " + e.message); }
+  };
 
-    function showScreen(screen) {
-      document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
-      document.getElementById(screen + "-screen").style.display = "block";
+  async function loadAdminData(){
+    // show keys from Firestore
+    const snap = await db.collection('keys').get();
+    let html = '';
+    snap.forEach(d=>{ const info = d.data()||{}; html += `<div style="padding:6px;border-bottom:1px solid #123">${d.id} — ${info.role||'user'} — ${info.expiry||'permanent'}</div>`;});
+    document.getElementById('keysList').innerHTML = html;
+    // users
+    const usersSnap = await db.collection('users').limit(200).get();
+    let uh = '';
+    usersSnap.forEach(u=> { const data = u.data()||{}; uh += `<div style="padding:6px;border-bottom:1px solid #123">${data.username||u.id} — key:${data.key||'-'}</div>`; });
+    document.getElementById('usersList').innerHTML = uh;
+  }
+
+  // ---------- connect broker buttons ----------
+  document.querySelectorAll('.connectBtn').forEach(btn=>{
+    btn.onclick = async (e)=>{
+      const b = e.target.dataset.broker;
+      const uid = auth.currentUser.uid;
+      const api_key = prompt("API Key for "+b);
+      const secret = prompt("Secret for "+b);
+      if(!api_key || !secret) return alert("Cancelled");
+      await fetch(BACKEND + "/broker/connect", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, broker: b, api_key, secret})});
+      alert(b + " connected");
+      await refreshBalances(uid);
     }
+  });
 
-    function unlockHome() {
-      const key = prompt("Enter Key to unlock Home:");
-      if (["pth7","key15","ishaan30","splkey50","ishaan"].includes(key)) {
-        document.getElementById("home-lock").style.display = "none";
-        document.getElementById("home-content").style.display = "block";
-        document.getElementById("search-lock").style.display = "none";
-        document.getElementById("search-content").style.display = "block";
-      } else {
-        alert("Invalid key!");
+  // ---------- refresh balances ----------
+  async function refreshBalances(uid){
+    if(!uid) return;
+    const brokers = ['zerodha','angelone','binance','exness'];
+    let walletHtml = '';
+    for(const b of brokers){
+      const res = await fetch(BACKEND + "/balance", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, broker:b})});
+      const j = await res.json();
+      const bal = j.balance || 'Connect Broker';
+      walletHtml += `<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #123">${b.toUpperCase()} <div>${bal}</div></div>`;
+    }
+    document.getElementById('walletBalances').innerHTML = walletHtml;
+  }
+  document.getElementById('walletBtn').onclick = ()=> document.getElementById('walletPopup').classList.toggle('hidden');
+  document.getElementById('walletClose').onclick = ()=> document.getElementById('walletPopup').classList.add('hidden');
+
+  // ---------- tab navigation ----------
+  function openTab(name){
+    ['home','search','admin','account'].forEach(n=> document.getElementById(n).classList.add('hidden'));
+    document.getElementById(name).classList.remove('hidden');
+  }
+  window.openTab = openTab;
+
+  // ---------- home lock/unlock ----------
+  document.getElementById('homeLockBtn').onclick = async ()=>{
+    const key = prompt("Enter key to unlock home/search:");
+    // call backend validate_key if exists
+    try {
+      const res = await fetch(BACKEND + "/validate_key", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})});
+      const j = await res.json();
+      if(j.valid){
+        document.getElementById('homeLock').style.display='none';
+        document.getElementById('homeContent').classList.remove('hidden');
+        document.getElementById('search').classList.remove('hidden');
+      } else alert("Invalid key");
+    } catch(e){ alert("validation failed"); }
+  };
+
+  // ---------- Auth state handling ----------
+  auth.onAuthStateChanged(async user => {
+    if(user){
+      document.getElementById('auth').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      document.getElementById('bottomNav').style.display='flex';
+      // register service worker
+      if('serviceWorker' in navigator){
+        try{ await navigator.serviceWorker.register('/firebase-messaging-sw.js'); }catch(e){}
       }
+      // attempt to fetch and refresh balances
+      await refreshBalances(user.uid);
+    } else {
+      // show auth after intro if not logged in
+      if(!intro.classList.contains('hidden')){} else { document.getElementById('auth').classList.remove('hidden'); }
     }
+  });
 
-    function unlockSearch() {
-      alert("Search unlocks automatically with Home!");
-    }
+  // Expose mapping to global
+  window.addToWatch = async function(sym){
+    const uid = auth.currentUser && auth.currentUser.uid;
+    if(!uid) return alert("Login");
+    const wref = db.collection('users').doc(uid).collection('meta').doc('watchlist');
+    const wdoc = await wref.get();
+    let items = wdoc.exists ? (wdoc.data().items||[]) : [];
+    if(!items.includes(sym)) items.push(sym.toUpperCase());
+    await wref.set({items, updated: new Date().toISOString()});
+    await fetch(BACKEND + "/watchlist", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, items})});
+    alert("Added "+sym);
+  };
 
-    function unlockAdmin() {
-      const key = prompt("Enter Admin Key:");
-      if (["vamya","pthowner16"].includes(key)) {
-        document.getElementById("admin-lock").style.display = "none";
-        document.getElementById("admin-content").style.display = "block";
-      } else {
-        alert("Invalid admin key!");
-      }
-    }
-
-    function toggleWallet() {
-      const popup = document.getElementById("wallet-popup");
-      popup.style.display = popup.style.display === "block" ? "none" : "block";
-    }
   </script>
-
 </body>
-      </html>
+        </html>
