@@ -1,115 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>ProTraderHack</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ProTraderHack (PTH)</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body { background:#0b1220; color:#e6eef8; font-family:Inter,Arial; }
-    .nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:#0f1724; padding:10px; justify-content:space-around; }
-    .tab { flex:1; text-align:center; cursor:pointer; padding:8px; }
-    .hidden { display:none; }
-    .locked { filter: blur(4px); position: relative; }
-    .locked::after { content:'🔒'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2rem; }
+    body { background:#041026; color:#e6eef8; font-family:Inter,Arial; margin:0; padding-bottom:72px; }
+    .card{ background:#071428; border-radius:12px; padding:14px; margin:12px; box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
+    .btn{ padding:12px;border-radius:10px;border:0;width:100%; }
+    .tiny{ font-size:12px; color:#94a3b8; }
+    .nav{ position:fixed; bottom:8px; left:8px; right:8px; display:flex; gap:8px; }
+    .nav button{ flex:1; background:#0f1724; border-radius:10px; padding:10px; color:#cbd5e1; border:0; }
+    .hidden{ display:none; }
+    .lock-center{ display:flex; justify-content:center; align-items:center; height:60vh; }
+    #chart { height:320px; border-radius:10px; overflow:hidden; background:#0b1220; }
+    .watchlist { max-height:260px; overflow:auto; }
+    .back-arrow { position:fixed; top:12px; left:12px; font-size:20px; background:#0b1220; padding:8px;border-radius:8px; }
+    .wallet-pin { cursor:pointer; padding:6px 8px; border-radius:8px; background:#111827; }
   </style>
 </head>
-<body class="p-4">
+<body>
 
-  <!-- Auth -->
-  <div id="authScreen">
-    <h2 class="text-xl mb-4">Login / Signup</h2>
-    <input id="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900"><br>
-    <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-2 rounded bg-gray-900"><br>
-    <input id="username" placeholder="Username (a-z0-9, max 12)" class="w-full p-2 mb-2 rounded bg-gray-900"><br>
-    <button onclick="signup()" class="px-4 py-2 bg-green-600 rounded">Sign Up</button>
-    <button onclick="login()" class="px-4 py-2 bg-blue-600 rounded">Login</button>
-    <button onclick="googleLogin()" class="px-4 py-2 bg-red-600 rounded mt-2">Login with Google</button>
-  </div>
-
-  <!-- App -->
-  <div id="appScreen" class="hidden">
-    <!-- Screens -->
-    <div id="home" class="locked"><h2 class="text-xl">Home</h2><div id="balances"></div></div>
-    <div id="search" class="locked hidden"><h2 class="text-xl">Search</h2></div>
-    <div id="admin" class="locked hidden"><h2 class="text-xl">Admin</h2></div>
-    <div id="account" class="hidden">
-      <h2 class="text-xl mb-2">Account</h2>
-      <div id="brokers"></div>
-    </div>
-
-    <!-- Bottom nav -->
-    <div class="nav">
-      <div class="tab" onclick="showTab('home')">🏠 Home</div>
-      <div class="tab" onclick="showTab('search')">🔍 Search</div>
-      <div class="tab" onclick="showTab('admin')">🛠️ Admin</div>
-      <div class="tab" onclick="showTab('account')">👤 Account</div>
+  <!-- INTRO VIDEO -->
+  <div id="intro" class="card" style="margin-top:18px;">
+    <video id="introVideo" playsinline autoplay muted controls style="width:100%; border-radius:10px;">
+      <source src="VID-20250904-WA0075.mp4" type="video/mp4" />
+      Your browser doesn't support video.
+    </video>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button id="skipIntro" class="btn" style="background:#2563eb;color:white">Skip Intro</button>
     </div>
   </div>
 
-  <!-- Firebase -->
+  <!-- AUTH FLOW (multi-step inside one area) -->
+  <div id="authArea" class="card hidden">
+    <div id="step-email">
+      <h2 class="text-xl font-bold">Create your account</h2>
+      <p class="tiny">Sign up with email or Google</p>
+      <input id="email" type="email" placeholder="Email" class="w-full p-3 mt-3 rounded bg-[#0b1220]" />
+      <input id="password" type="password" placeholder="Password" class="w-full p-3 mt-3 rounded bg-[#0b1220]" />
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="nextToPhone" class="btn" style="background:#10b981;color:#fff">Next</button>
+        <button id="googleSign" class="btn" style="background:#ef4444;color:#fff">Google</button>
+      </div>
+      <p class="tiny mt-2">Already have an account? <a id="showLogin" href="#" style="color:#60a5fa">Login</a></p>
+    </div>
+
+    <div id="step-phone" class="hidden">
+      <h3 class="font-semibold">Verify your phone</h3>
+      <input id="phone" placeholder="+91xxxxxxxxxx" class="w-full p-3 mt-3 rounded bg-[#0b1220]" />
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="sendOtp" class="btn" style="background:#f59e0b;color:#000">Send OTP</button>
+      </div>
+      <input id="otp" placeholder="Enter OTP" class="w-full p-3 mt-3 rounded bg-[#0b1220]" />
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="verifyOtp" class="btn" style="background:#10b981;color:#fff">Verify & Next</button>
+      </div>
+    </div>
+
+    <div id="step-username" class="hidden">
+      <h3 class="font-semibold">Choose username</h3>
+      <input id="username" placeholder="a-z0-9 max 12 chars" class="w-full p-3 mt-3 rounded bg-[#0b1220]" />
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+        <input id="terms" type="checkbox" /> <label class="tiny">I accept Terms & Conditions</label>
+      </div>
+      <div id="recaptcha-placeholder" class="tiny mt-2">reCAPTCHA placeholder (enable on Firebase if needed)</div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="confirmSignup" class="btn" style="background:#2563eb;color:white">Confirm</button>
+      </div>
+    </div>
+
+    <!-- LOGIN modal -->
+    <div id="loginBox" class="hidden">
+      <h3 class="font-semibold">Login</h3>
+      <input id="loginEmail" placeholder="Email" class="w-full p-3 mt-3 rounded bg-[#0b1220]" />
+      <input id="loginPass" placeholder="Password" class="w-full p-3 mt-3 rounded bg-[#0b1220]" />
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="loginSubmit" class="btn" style="background:#2563eb;color:white">Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACK ARROW for popup screens -->
+  <div id="backBtn" class="back-arrow hidden" onclick="closePopup()">⬅️</div>
+
+  <!-- MAIN CONTENT -->
+  <div id="main" class="hidden">
+
+    <!-- HOME SCREEN -->
+    <div id="home" class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 class="text-xl font-bold">ProTraderHack</h2>
+        <div>
+          <button id="walletBtn" class="wallet-pin">Wallet</button>
+        </div>
+      </div>
+
+      <!-- Watchlist left + Chart center -->
+      <div style="display:flex;gap:12px;margin-top:12px;">
+        <div style="width:28%;">
+          <div class="tiny">Watchlist</div>
+          <div id="watchlist" class="watchlist mt-3" style="background:#061025;padding:8px;border-radius:8px;"></div>
+          <div class="tiny mt-3">Add symbol in Search to add to watchlist</div>
+        </div>
+
+        <div style="width:72%;">
+          <div id="chart" style="background:#000;border-radius:8px;overflow:hidden;">
+            <!-- TradingView widget fallback -->
+            <div id="tv_widget" style="height:320px;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:10px;">
+            <div>
+              <button id="buyBtn" class="btn" style="width:120px;background:#10b981;color:#000">Buy</button>
+              <button id="sellBtn" class="btn" style="width:120px;background:#ef4444;color:#fff;margin-left:8px">Sell</button>
+            </div>
+            <div>
+              <div class="tiny">Signal</div>
+              <div id="signalBadge" class="card" style="display:inline-block;padding:8px;border-radius:8px;">HOLD</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH SCREEN -->
+    <div id="search" class="card hidden" style="margin-top:14px;">
+      <div style="display:flex;gap:8px;">
+        <input id="searchInput" class="w-full p-3 rounded bg-[#0b1220]" placeholder="Search symbol e.g. BTC/USDT, AAPL" />
+        <button id="searchAdd" class="btn" style="width:120px;background:#2563eb;color:white">Add</button>
+      </div>
+      <div id="searchResults" class="mt-3"></div>
+    </div>
+
+    <!-- ADMIN SCREEN -->
+    <div id="admin" class="card hidden" style="margin-top:14px;">
+      <h3 class="text-lg font-semibold">Admin Panel</h3>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <input id="adminKey" placeholder="Enter admin key" class="w-full p-3 rounded bg-[#0b1220]" />
+        <button id="unlockAdmin" class="btn" style="width:120px;background:#10b981;color:#000">Unlock</button>
+      </div>
+      <div id="adminArea" class="hidden mt-4">
+        <div style="display:flex;gap:8px;">
+          <input id="newKey" placeholder="New key string" class="w-full p-3 rounded bg-[#0b1220]" />
+          <select id="newKeyDays" class="p-3 rounded bg-[#0b1220]">
+            <option value="">Permanent</option>
+            <option value="1">1 day</option><option value="7">7 days</option><option value="30">30 days</option><option value="50">50 days</option>
+          </select>
+          <button id="createKey" class="btn" style="background:#2563eb;color:#fff;width:120px">Create</button>
+        </div>
+        <h4 class="mt-4">Existing Keys</h4>
+        <div id="keysList" class="mt-2 tiny"></div>
+
+        <h4 class="mt-4">Users</h4>
+        <div id="usersList" class="mt-2 tiny"></div>
+      </div>
+    </div>
+
+    <!-- ACCOUNT SCREEN -->
+    <div id="account" class="card hidden" style="margin-top:14px;">
+      <h3 class="text-lg font-semibold">Account</h3>
+      <div class="mt-3">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>Zerodha</div><div id="zerodhaBtn" class="tiny" style="color:#ef4444">Connect</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>AngelOne</div><div id="angelBtn" class="tiny" style="color:#ef4444">Connect</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>Binance</div><div id="binanceBtn" class="tiny" style="color:#ef4444">Connect</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>Exness</div><div id="exnessBtn" class="tiny" style="color:#ef4444">Connect</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET POPUP (hidden by default) -->
+    <div id="walletPopup" class="card hidden" style="position:fixed;left:12px;right:12px;bottom:90px;">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h4 class="font-semibold">Wallet</h4>
+        <div id="walletClose" style="cursor:pointer">✖</div>
+      </div>
+      <div id="walletBalances" class="mt-3 tiny"></div>
+      <div class="tiny mt-3">Pin a broker to show its balance on Home top-left</div>
+    </div>
+
+  </div>
+
+  <!-- Footer nav -->
+  <div class="nav" id="bottomNav" style="display:none">
+    <button onclick="openScreen('home')">Home</button>
+    <button onclick="openScreen('search')">Search</button>
+    <button onclick="openScreen('admin')">Admin</button>
+    <button onclick="openScreen('account')">Account</button>
+  </div>
+
+
+  <!-- Firebase scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
+
+  <!-- Optional TradingView lightweight/embeddable -->
+  <script src="https://s3.tradingview.com/tv.js"></script>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
-      authDomain: "protraderhack-d67f0.firebaseapp.com",
-      projectId: "protraderhack-d67f0",
-      storageBucket: "protraderhack-d67f0.firebasestorage.app",
-      messagingSenderId: "1062485216321",
-      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const messaging = firebase.messaging();
+  // ---------- CONFIG ----------
+  const BACKEND = "https://protrader-backend-sbus.onrender.com"; // replace with your backend URL if different
+  const firebaseConfig = {
+    apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+    authDomain: "protraderhack-d67f0.firebaseapp.com",
+    projectId: "protraderhack-d67f0",
+    storageBucket: "protraderhack-d67f0.appspot.com",
+    messagingSenderId: "1062485216321",
+    appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-    let currentUser = null;
+  // ---------- UI helpers ----------
+  const el = id => document.getElementById(id);
+  function show(elem){ elem.classList.remove('hidden'); }
+  function hide(elem){ elem.classList.add('hidden'); }
 
-    // Auth
-    function signup(){
-      let e=document.getElementById("email").value, p=document.getElementById("password").value, u=document.getElementById("username").value;
-      if(!/^[a-z0-9]{1,12}$/.test(u)){ alert("Invalid username"); return; }
-      auth.createUserWithEmailAndPassword(e,p).then(res=>{
-        db.collection("users").doc(res.user.uid).set({username:u, key_valid:false});
-      }).catch(err=>alert(err.message));
+  // ---------- Intro flow ----------
+  const intro = el('intro'), authArea = el('authArea'), main = el('main'), bottomNav = el('bottomNav');
+  el('skipIntro').addEventListener('click', () => {
+    intro.classList.add('hidden'); authArea.classList.remove('hidden');
+  });
+  document.getElementById('introVideo').addEventListener('ended', ()=>{
+    intro.classList.add('hidden'); authArea.classList.remove('hidden');
+  });
+
+  // ---------- Auth flow handlers ----------
+  // Step navigation:
+  const stepEmail = el('step-email'), stepPhone = el('step-phone'), stepUser = el('step-username');
+  el('nextToPhone').onclick = ()=>{ stepEmail.classList.add('hidden'); stepPhone.classList.remove('hidden'); }
+  el('sendOtp').onclick = async ()=>{
+    // Phone OTP via Firebase: configure reCAPTCHA & PhoneAuth in Firebase Console before using
+    alert("OTP simulated in this demo. (Enable Phone Auth in Firebase for real OTP)");
+  };
+  el('verifyOtp').onclick = ()=>{ stepPhone.classList.add('hidden'); stepUser.classList.remove('hidden'); }
+  el('confirmSignup').onclick = async ()=>{
+    const email = el('email').value, pass = el('password').value;
+    const username = el('username').value;
+    const terms = el('terms').checked;
+    if(!/^[a-z0-9]{1,12}$/.test(username)){ return alert("Username must be lowercase letters and numbers up to 12 characters"); }
+    if(!terms){ return alert("Accept Terms"); }
+    try {
+      const res = await auth.createUserWithEmailAndPassword(email, pass);
+      const uid = res.user.uid;
+      await db.collection('users').doc(uid).set({ username, created_at: new Date().toISOString() });
+      finishLogin(uid);
+    } catch(e){
+      alert("Signup error: "+e.message);
     }
-    function login(){ auth.signInWithEmailAndPassword(email.value,password.value).catch(err=>alert(err.message)); }
-    function googleLogin(){ let g=new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(g); }
+  };
 
-    auth.onAuthStateChanged(u=>{
-      if(u){ currentUser=u; authScreen.classList.add("hidden"); appScreen.classList.remove("hidden"); initMessaging(); }
-      else{ authScreen.classList.remove("hidden"); appScreen.classList.add("hidden"); }
+  // Login flow
+  el('showLogin').onclick = ()=>{ stepEmail.classList.add('hidden'); el('loginBox').classList.remove('hidden'); }
+  el('loginSubmit').onclick = async ()=>{
+    const email = el('loginEmail').value, pass = el('loginPass').value;
+    try {
+      const r = await auth.signInWithEmailAndPassword(email, pass);
+      finishLogin(r.user.uid);
+    } catch(e){ alert("Login failed: "+e.message); }
+  };
+  el('googleSign').onclick = async ()=>{
+    try {
+      const p = new firebase.auth.GoogleAuthProvider();
+      const r = await auth.signInWithPopup(p);
+      const uid = r.user.uid;
+      // ensure username exists; if not prompt minimal username flow (here we auto-create placeholder)
+      const udoc = await db.collection('users').doc(uid).get();
+      if(!udoc.exists){
+        await db.collection('users').doc(uid).set({ username: r.user.displayName ? r.user.displayName.replace(/\s+/g,'').toLowerCase().slice(0,12) : 'user'+Date.now() });
+      }
+      finishLogin(uid);
+    } catch(e){ alert(e.message); }
+  };
+
+  function finishLogin(uid){
+    authArea.classList.add('hidden');
+    main.classList.remove('hidden');
+    bottomNav.style.display='flex';
+    openScreen('home');
+    // show wallet & refresh balances
+    refreshAllBalances(uid);
+    loadKeysToAdmin();
+    listenNotifications();
+  }
+
+  // ---------- Bottom nav screen control ----------
+  function openScreen(name){
+    // hide all card sections inside main
+    ['home','search','admin','account'].forEach(s=> el(s).classList.add('hidden'));
+    el(name).classList.remove('hidden');
+    // show back arrow only for some screens/popups
+    el('backBtn').classList.add('hidden');
+    if(name==='home'){ refreshAllBalances(auth.currentUser ? auth.currentUser.uid : null); renderChart(); }
+  }
+
+  // ---------- Wallet popup ----------
+  el('walletBtn').onclick = async ()=>{
+    const popup = el('walletPopup');
+    popup.classList.toggle('hidden');
+    if(!popup.classList.contains('hidden')) {
+      document.getElementById('walletBalances').innerHTML = "Loading...";
+      await refreshAllBalances(auth.currentUser ? auth.currentUser.uid : null, true);
+    }
+  };
+  el('walletClose').onclick = ()=> el('walletPopup').classList.add('hidden');
+
+  // ---------- Watchlist & Chart ----------
+  const WATCH = []; // in-memory; persists later to Firestore if needed
+  function addToWatch(symbol){
+    if(!symbol) return;
+    if(!WATCH.includes(symbol)) WATCH.unshift(symbol);
+    renderWatchlist(); renderChart();
+  }
+  function renderWatchlist(){
+    const W = el('watchlist'); W.innerHTML = '';
+    WATCH.forEach(s=>{
+      const d = document.createElement('div');
+      d.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)"><div>${s}</div><div><button class="tiny" onclick="selectSymbol('${s}')">View</button></div></div>`;
+      W.appendChild(d);
     });
+    if(WATCH.length===0) W.innerHTML = `<div class="tiny">Add to watchlist to see chart</div>`;
+  }
+  function selectSymbol(s){ el('chart').dataset.symbol = s; renderChart(); }
 
-    // Tabs
-    function showTab(tab){ ["home","search","admin","account"].forEach(t=>document.getElementById(t).classList.add("hidden")); document.getElementById(tab).classList.remove("hidden"); }
-
-    // Unlock with keys
-    function unlock(tab, key){
-      const validUserKeys={"pth7":7,"key15":15,"ishaan30":30,"splkey50":50,"ishaan":9999};
-      const validAdminKeys=["vamya","pthowner16"];
-      if(tab=="home"||tab=="search"){ if(key in validUserKeys){ home.classList.remove("locked"); search.classList.remove("locked"); db.collection("users").doc(currentUser.uid).set({key_valid:true},{merge:true}); } }
-      if(tab=="admin"){ if(validAdminKeys.includes(key)){ admin.classList.remove("locked"); } }
+  // Render Chart area: try TradingView widget if available; fallback text
+  function renderChart(){
+    const symbol = el('chart').dataset.symbol || WATCH[0] || null;
+    const tv = document.getElementById('tv_widget');
+    if(!symbol){
+      tv.innerHTML = `<div style="padding:24px;color:#94a3b8">Add to watchlist to see the chart</div>`;
+      return;
     }
-
-    // Brokers UI
-    const brokers=["zerodha","angelone","binance","exness"];
-    function loadBrokers(){ brokersDiv=document.getElementById("brokers"); brokersDiv.innerHTML=""; brokers.forEach(b=>{ brokersDiv.innerHTML+=`<div>${b.toUpperCase()} — <button onclick="connectBroker('${b}')">Connect</button> <button onclick="checkBalance('${b}')">Balance</button> <button onclick="deposit('${b}')">Deposit</button> <button onclick="withdraw('${b}')">Withdraw</button></div>`; }); }
-    function connectBroker(b){ fetch("/broker/connect",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:currentUser.uid,broker:b,api_key:"demo",secret:"demo"})}); }
-    function checkBalance(b){ fetch("/balance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:currentUser.uid,broker:b})}).then(r=>r.json()).then(j=>alert(b+" balance: "+j.balance)); }
-    function deposit(b){ let amt=prompt("Enter amount"); fetch("/deposit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:currentUser.uid,broker:b,amount:amt})}).then(r=>r.json()).then(j=>{ if(j.redirect) location.href=j.redirect; else alert("Deposit "+j.status); }); }
-    function withdraw(b){ let amt=prompt("Enter amount"); fetch("/withdraw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:currentUser.uid,broker:b,amount:amt})}).then(r=>r.json()).then(j=>{ if(j.redirect) location.href=j.redirect; else alert("Withdraw "+j.status); }); }
-    loadBrokers();
-
-    // Messaging
-    function initMessaging(){
-      messaging.requestPermission().then(()=>messaging.getToken()).then(tok=>{ db.collection("users").doc(currentUser.uid).set({fcm_token:tok},{merge:true}); });
-      messaging.onMessage(payload=>{ alert("🔔 "+payload.notification.title+" — "+payload.notification.body); });
+    tv.innerHTML = ''; // clean
+    try {
+      // embedded tradingview widget (public, not full library)
+      new TradingView.widget({
+        "width": "100%",
+        "height": 320,
+        "symbol": symbol.replace("/",""),
+        "interval": "60",
+        "theme": "dark",
+        "container_id": "tv_widget"
+      });
+    } catch(e){
+      tv.innerHTML = `<div style="padding:24px;color:#94a3b8">Chart for ${symbol} (widget not available)</div>`;
     }
-  </script>
-</body>
-</html>
+  }
+
+  // ---------- search add ----------
+  el('searchAdd').onclick = ()=> {
+    const s = el('searchInput').value.trim();
+    if(!s) return alert("Enter symbol");
+    addToWatch(s);
+    el('searchInput').value = '';
+    alert('Added to watchlist: '+s);
+  };
+
+  // ---------- Broker connect logic ----------
+  async function connectBroker(broker){
+    if(!auth.currentUser) return alert("Please login");
+    const uid = auth.currentUser.uid;
+    // show small form to collect API keys; here we'll just simulate a success
+    const api_key = prompt("Enter API Key for "+broker);
+    const secret = prompt("Enter Secret for "+broker);
+    if(!api_key || !secret) return alert("Connection cancelled");
+    const res = await fetch(BACKEND + "/broker/connect", {method:'POST',headers:{"Content-Type":"application/json"},body:JSON.stringify({uid,broker,api_key,secret})});
+    const j = await res.json();
+    if(j.status==="connected"){ alert(broker+" connected"); refreshAllBalances(uid); updateAccountButtons(uid); }
+    else alert("Connect failed");
+  }
+
+  // account connect buttons
+  document.getElementById('zerodhaBtn').onclick = ()=> connectBroker('zerodha');
+  document.getElementById('angelBtn').onclick = ()=> connectBroker('angelone');
+  document.getElementById('binanceBtn').onclick = ()=> connectBroker('binance');
+  document.getElementById('exnessBtn').onclick = ()=> connectBroker('exness');
+
+  // ---------- Balance refresh utility ----------
+  async function refreshAllBalances(uid, showWallet=false){
+    if(!uid) return;
+    const brokers = ['zerodha','angelone','binance','exness'];
+    let walletHtml = '';
+    for(const b of brokers){
+      try {
+        const res = await fetch(BACKEND + "/balance", {method:'POST',headers:{"Content-Type":"application/json"},body:JSON.stringify({uid,broker:b})});
+        const j = await res.json();
+        const bal = j.balance === undefined ? "Connect Broker" : j.balance;
+        document.querySelector(`#${b}Btn`).innerText = bal === "Connect Broker" ? "Connect" : "Connected";
+        // show glowing green if connected
+        document.querySelector(`#${b}Btn`).style.color = bal === "Connect Broker" ? "#ef4444" : "#10b981";
+        walletHtml += `<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)">${b.toUpperCase()} <div>${bal}</div></div>`;
+        // pin handling: if pinned show on home top-left
+        const pinned = localStorage.getItem('pinned_broker');
+        if(pinned === b){
+          // show pinned balance top-left (simple)
+          let pinnedElem = document.querySelector('.pinned-balance');
+          if(!pinnedElem){
+            pinnedElem = document.createElement('div');
+            pinnedElem.className = 'pinned-balance';
+            pinnedElem.style.position = 'absolute';
+            pinnedElem.style.left = '18px';
+            pinnedElem.style.top = '18px';
+            pinnedElem.style.background = '#0b1220';
+            pinnedElem.style.padding = '8px';
+            pinnedElem.style.borderRadius = '8px';
+            document.querySelector('#home .card')?.appendChild(pinnedElem);
+          }
+          pinnedElem.innerText = `${b.toUpperCase()}: ${bal}`;
+        }
+      } catch(e){ console.error("bal err",e); }
+    }
+    if(showWallet) document.getElementById('walletBalanc
