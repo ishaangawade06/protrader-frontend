@@ -1,245 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
   <title>ProTraderHack</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
     body { background:#0b1220; color:#e6eef8; font-family:Inter,Arial; }
-    .screen { display:none; padding:16px; }
-    .active { display:block; }
-    .nav { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:space-around; background:#111827; padding:10px; }
-    .nav button { flex:1; padding:8px; font-size:14px; }
-    .locked { filter: blur(6px); pointer-events: none; }
-    .center-lock { display:flex; justify-content:center; align-items:center; height:70vh; }
-    .lock-btn { font-size:40px; cursor:pointer; }
-    .balance-box { background:#1f2937; padding:10px; border-radius:8px; margin-bottom:10px; }
+    .nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:#0f1724; padding:10px; justify-content:space-around; }
+    .tab { flex:1; text-align:center; cursor:pointer; padding:8px; }
+    .hidden { display:none; }
+    .locked { filter: blur(4px); position: relative; }
+    .locked::after { content:'🔒'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2rem; }
   </style>
 </head>
 <body class="p-4">
 
   <!-- Auth -->
-  <div id="authScreen" class="screen active">
-    <h2 class="text-xl font-bold mb-4">Welcome to ProTraderHack</h2>
-    <input id="username" placeholder="Username (small letters/numbers)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <input id="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-2 rounded bg-gray-900" />
-    <button id="signupBtn" class="w-full py-2 mb-2 rounded bg-green-600">Sign Up</button>
-    <button id="loginBtn" class="w-full py-2 mb-2 rounded bg-blue-600">Log In</button>
-    <button id="googleBtn" class="w-full py-2 mb-2 rounded bg-red-600">Continue with Google</button>
+  <div id="authScreen">
+    <h2 class="text-xl mb-4">Login / Signup</h2>
+    <input id="email" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900"><br>
+    <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-2 rounded bg-gray-900"><br>
+    <input id="username" placeholder="Username (a-z0-9, max 12)" class="w-full p-2 mb-2 rounded bg-gray-900"><br>
+    <button onclick="signup()" class="px-4 py-2 bg-green-600 rounded">Sign Up</button>
+    <button onclick="login()" class="px-4 py-2 bg-blue-600 rounded">Login</button>
+    <button onclick="googleLogin()" class="px-4 py-2 bg-red-600 rounded mt-2">Login with Google</button>
   </div>
 
-  <!-- Home -->
-  <div id="homeScreen" class="screen locked">
-    <div id="homeLock" class="center-lock"><span class="lock-btn">🔒</span></div>
-    <div id="homeContent" style="display:none;">
-      <h2 class="text-xl font-bold mb-4">📈 Home</h2>
-      <div id="balances"></div>
-      <div class="mt-4">
-        <h3 class="font-semibold">Quick Trade</h3>
-        <input id="tradeSymbol" placeholder="Symbol (e.g. BTCUSDT)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-        <input id="tradeAmount" placeholder="Amount" class="w-full p-2 mb-2 rounded bg-gray-900" />
-        <button onclick="placeOrder('buy')" class="w-full py-2 mb-2 rounded bg-green-600">Buy</button>
-        <button onclick="placeOrder('sell')" class="w-full py-2 rounded bg-red-600">Sell</button>
-      </div>
+  <!-- App -->
+  <div id="appScreen" class="hidden">
+    <!-- Screens -->
+    <div id="home" class="locked"><h2 class="text-xl">Home</h2><div id="balances"></div></div>
+    <div id="search" class="locked hidden"><h2 class="text-xl">Search</h2></div>
+    <div id="admin" class="locked hidden"><h2 class="text-xl">Admin</h2></div>
+    <div id="account" class="hidden">
+      <h2 class="text-xl mb-2">Account</h2>
+      <div id="brokers"></div>
     </div>
-  </div>
 
-  <!-- Search -->
-  <div id="searchScreen" class="screen locked">
-    <div id="searchLock" class="center-lock"><span class="lock-btn">🔒</span></div>
-    <div id="searchContent" style="display:none;">
-      <h2 class="text-xl font-bold">🔍 Search</h2>
-      <input id="searchBar" placeholder="Search symbol..." class="w-full p-2 mb-2 rounded bg-gray-900" />
-      <div id="searchResults"></div>
+    <!-- Bottom nav -->
+    <div class="nav">
+      <div class="tab" onclick="showTab('home')">🏠 Home</div>
+      <div class="tab" onclick="showTab('search')">🔍 Search</div>
+      <div class="tab" onclick="showTab('admin')">🛠️ Admin</div>
+      <div class="tab" onclick="showTab('account')">👤 Account</div>
     </div>
-  </div>
-
-  <!-- Admin -->
-  <div id="adminScreen" class="screen locked">
-    <div id="adminLock" class="center-lock"><span class="lock-btn">🔒</span></div>
-    <div id="adminContent" style="display:none;">
-      <h2 class="text-xl font-bold">⚙️ Admin Panel</h2>
-      <p>Manage keys and users here (admin only).</p>
-    </div>
-  </div>
-
-  <!-- Account -->
-  <div id="accountScreen" class="screen">
-    <h2 class="text-xl font-bold">👤 Account</h2>
-    <p>Connect your broker below:</p>
-    <div id="brokersList">
-      <div id="zerodhaBalance">Zerodha: <span class="bal">Connect Broker</span> <button onclick="connectBroker('zerodha')">Connect</button></div>
-      <div id="angelBalance">AngelOne: <span class="bal">Connect Broker</span> <button onclick="connectBroker('angelone')">Connect</button></div>
-      <div id="binanceBalance">Binance: <span class="bal">Connect Broker</span> <button onclick="connectBroker('binance')">Connect</button></div>
-      <div id="exnessBalance">Exness: <span class="bal">Connect Broker</span> <button onclick="connectBroker('exness')">Connect</button></div>
-    </div>
-    <hr class="my-3 border-gray-700" />
-    <h3 class="font-semibold mb-2">Funds</h3>
-    <button onclick="deposit()" class="w-full py-2 mb-2 rounded bg-green-600">Deposit</button>
-    <button onclick="withdraw()" class="w-full py-2 rounded bg-red-600">Withdraw</button>
-  </div>
-
-  <!-- Bottom nav -->
-  <div class="nav">
-    <button onclick="showScreen('homeScreen')">Home</button>
-    <button onclick="showScreen('searchScreen')">Search</button>
-    <button onclick="showScreen('adminScreen')">Admin</button>
-    <button onclick="showScreen('accountScreen')">Account</button>
   </div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
       projectId: "protraderhack-d67f0",
-      storageBucket: "protraderhack-d67f0.appspot.com",
+      storageBucket: "protraderhack-d67f0.firebasestorage.app",
       messagingSenderId: "1062485216321",
       appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
+    const messaging = firebase.messaging();
 
-    const BACKEND = "https://protrader-backend-sbus.onrender.com";
-
-    function showScreen(id){
-      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      if(id==="homeScreen") refreshBalances();
-      if(id==="accountScreen") refreshBalances();
-    }
-
-    // Unlock logic
-    document.querySelector("#homeLock .lock-btn").onclick = ()=>unlock('home');
-    document.querySelector("#searchLock .lock-btn").onclick = ()=>unlock('search');
-    document.querySelector("#adminLock .lock-btn").onclick = ()=>unlock('admin');
-
-    function unlock(type){
-      const key = prompt("Enter unlock key:");
-      const userKeys = { "pth7":7, "key15":15, "ishaan30":30, "splkey50":50, "ishaan":"perm" };
-      const adminKeys = ["vamya","pthowner16"];
-
-      if(type==="home" || type==="search"){
-        if(key in userKeys){
-          ["home","search"].forEach(sec=>{
-            document.getElementById(sec+"Screen").classList.remove("locked");
-            document.getElementById(sec+"Lock").style.display="none";
-            document.getElementById(sec+"Content").style.display="block";
-          });
-          alert("✅ Home & Search unlocked!");
-        } else alert("❌ Invalid key");
-      }
-      if(type==="admin"){
-        if(adminKeys.includes(key)){
-          document.getElementById("adminScreen").classList.remove("locked");
-          document.getElementById("adminLock").style.display="none";
-          document.getElementById("adminContent").style.display="block";
-          alert("✅ Admin unlocked!");
-        } else alert("❌ Invalid admin key");
-      }
-    }
+    let currentUser = null;
 
     // Auth
-    document.getElementById('signupBtn').onclick = async ()=>{
-      const user = document.getElementById('username').value;
-      const email = document.getElementById('email').value;
-      const pass = document.getElementById('password').value;
-      if(!/^[a-z0-9]{1,12}$/.test(user)){ alert("Invalid username!"); return; }
-      await auth.createUserWithEmailAndPassword(email,pass);
-      localStorage.setItem("uid", auth.currentUser.uid);
-      localStorage.setItem("username", user);
-      showScreen('homeScreen');
-    };
+    function signup(){
+      let e=document.getElementById("email").value, p=document.getElementById("password").value, u=document.getElementById("username").value;
+      if(!/^[a-z0-9]{1,12}$/.test(u)){ alert("Invalid username"); return; }
+      auth.createUserWithEmailAndPassword(e,p).then(res=>{
+        db.collection("users").doc(res.user.uid).set({username:u, key_valid:false});
+      }).catch(err=>alert(err.message));
+    }
+    function login(){ auth.signInWithEmailAndPassword(email.value,password.value).catch(err=>alert(err.message)); }
+    function googleLogin(){ let g=new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(g); }
 
-    document.getElementById('loginBtn').onclick = async ()=>{
-      const email = document.getElementById('email').value;
-      const pass = document.getElementById('password').value;
-      await auth.signInWithEmailAndPassword(email,pass);
-      localStorage.setItem("uid", auth.currentUser.uid);
-      showScreen('homeScreen');
-    };
+    auth.onAuthStateChanged(u=>{
+      if(u){ currentUser=u; authScreen.classList.add("hidden"); appScreen.classList.remove("hidden"); initMessaging(); }
+      else{ authScreen.classList.remove("hidden"); appScreen.classList.add("hidden"); }
+    });
 
-    document.getElementById('googleBtn').onclick = async ()=>{
-      const provider = new firebase.auth.GoogleAuthProvider();
-      await auth.signInWithPopup(provider);
-      localStorage.setItem("uid", auth.currentUser.uid);
-      showScreen('homeScreen');
-    };
+    // Tabs
+    function showTab(tab){ ["home","search","admin","account"].forEach(t=>document.getElementById(t).classList.add("hidden")); document.getElementById(tab).classList.remove("hidden"); }
 
-    // Broker interactions
-    async function connectBroker(name){
-      const uid = localStorage.getItem("uid");
-      if(!uid) return alert("Login first");
-      await fetch(`${BACKEND}/broker/connect`,{
-        method:"POST", headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({uid,broker:name,api_key:"demo",secret:"demo"})
-      });
-      refreshBalances();
+    // Unlock with keys
+    function unlock(tab, key){
+      const validUserKeys={"pth7":7,"key15":15,"ishaan30":30,"splkey50":50,"ishaan":9999};
+      const validAdminKeys=["vamya","pthowner16"];
+      if(tab=="home"||tab=="search"){ if(key in validUserKeys){ home.classList.remove("locked"); search.classList.remove("locked"); db.collection("users").doc(currentUser.uid).set({key_valid:true},{merge:true}); } }
+      if(tab=="admin"){ if(validAdminKeys.includes(key)){ admin.classList.remove("locked"); } }
     }
 
-    async function refreshBalances(){
-      const uid = localStorage.getItem("uid");
-      const balancesDiv = document.getElementById("balances");
-      balancesDiv.innerHTML = "";
-      for(const b of ["zerodha","angelone","binance","exness"]){
-        const res = await fetch(`${BACKEND}/balance`,{
-          method:"POST", headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({uid,broker:b})
-        });
-        const d = await res.json();
-        balancesDiv.innerHTML += `<div class="balance-box">${b.toUpperCase()}: ${d.balance || "Connect Broker"}</div>`;
-        document.querySelector(`#${b}Balance .bal`).innerText = d.balance || "Connect Broker";
-      }
-    }
+    // Brokers UI
+    const brokers=["zerodha","angelone","binance","exness"];
+    function loadBrokers(){ brokersDiv=document.getElementById("brokers"); brokersDiv.innerHTML=""; brokers.forEach(b=>{ brokersDiv.innerHTML+=`<div>${b.toUpperCase()} — <button onclick="connectBroker('${b}')">Connect</button> <button onclick="checkBalance('${b}')">Balance</button> <button onclick="deposit('${b}')">Deposit</button> <button onclick="withdraw('${b}')">Withdraw</button></div>`; }); }
+    function connectBroker(b){ fetch("/broker/connect",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:currentUser.uid,broker:b,api_key:"demo",secret:"demo"})}); }
+    function checkBalance(b){ fetch("/balance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:currentUser.uid,broker:b})}).then(r=>r.json()).then(j=>alert(b+" balance: "+j.balance)); }
+    function deposit(b){ let amt=prompt("Enter amount"); fetch("/deposit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:currentUser.uid,broker:b,amount:amt})}).then(r=>r.json()).then(j=>{ if(j.redirect) location.href=j.redirect; else alert("Deposit "+j.status); }); }
+    function withdraw(b){ let amt=prompt("Enter amount"); fetch("/withdraw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:currentUser.uid,broker:b,amount:amt})}).then(r=>r.json()).then(j=>{ if(j.redirect) location.href=j.redirect; else alert("Withdraw "+j.status); }); }
+    loadBrokers();
 
-    async function deposit(){
-      const uid = localStorage.getItem("uid");
-      const broker = prompt("Which broker? (zerodha/angelone/binance/exness)");
-      const amount = prompt("Enter amount");
-      const res = await fetch(`${BACKEND}/deposit`,{
-        method:"POST", headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({uid,broker,amount})
-      });
-      const d = await res.json();
-      if(d.redirect) window.location.href = d.redirect;
-      else alert("Deposit "+d.status);
-      refreshBalances();
+    // Messaging
+    function initMessaging(){
+      messaging.requestPermission().then(()=>messaging.getToken()).then(tok=>{ db.collection("users").doc(currentUser.uid).set({fcm_token:tok},{merge:true}); });
+      messaging.onMessage(payload=>{ alert("🔔 "+payload.notification.title+" — "+payload.notification.body); });
     }
-
-    async function withdraw(){
-      const uid = localStorage.getItem("uid");
-      const broker = prompt("Which broker? (zerodha/angelone/binance/exness)");
-      const amount = prompt("Enter amount");
-      const res = await fetch(`${BACKEND}/withdraw`,{
-        method:"POST", headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({uid,broker,amount})
-      });
-      const d = await res.json();
-      if(d.redirect) window.location.href = d.redirect;
-      else alert("Withdraw "+d.status);
-      refreshBalances();
-    }
-
-    async function placeOrder(side){
-      const uid = localStorage.getItem("uid");
-      const broker = prompt("Which broker to trade on? (zerodha/angelone/binance/exness)");
-      const symbol = document.getElementById("tradeSymbol").value;
-      const amount = document.getElementById("tradeAmount").value;
-      const res = await fetch(`${BACKEND}/trade`,{
-        method:"POST", headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({uid,broker,symbol,amount,side})
-      });
-      const d = await res.json();
-      alert(`${side.toUpperCase()} order ${d.status}`);
-      refreshBalances();
-    }
-
-    // Auto refresh balances every 60s
-    setInterval(refreshBalances, 60000);
   </script>
 </body>
-        </html>
+</html>
