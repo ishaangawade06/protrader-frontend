@@ -6,116 +6,212 @@
   <title>ProTraderHack</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body{font-family:Inter,Arial;background:#041026;color:#e6eef8;margin:0;padding-bottom:72px}
+    :root{--bg:#03060a;--card:#071428;--muted:#94a3b8}
+    body{background:var(--bg);color:#e6eef8;font-family:Inter,Arial;margin:0;padding-bottom:80px}
     .center{display:flex;align-items:center;justify-content:center;height:100vh}
-    .skip-btn{position:absolute;bottom:16px;right:16px;background:rgba(0,0,0,0.6);color:#fff;padding:8px 10px;border-radius:8px;border:0}
-    .nav{position:fixed;bottom:0;left:0;right:0;background:#0f1724;padding:10px;display:flex;gap:8px}
-    .nav button{flex:1;background:#0b1220;border-radius:8px;padding:8px;border:0;color:#cbd5e1}
-    .card{background:#071428;padding:12px;border-radius:12px;margin:12px}
+    .skip-btn{position:absolute;bottom:12px;right:12px;background:transparent;border:0;color:#fff;padding:6px 10px;border-radius:8px}
+    .nav{position:fixed;bottom:0;left:0;right:0;background:#041828;padding:10px;display:flex;gap:8px;box-shadow:0 -8px 30px rgba(0,0,0,0.6)}
+    .nav button{flex:1;background:linear-gradient(180deg,#071428,#061226);border-radius:12px;padding:12px;border:0;color:#cbd5e1;font-weight:600}
+    .card{background:linear-gradient(180deg,#071428,#041225);padding:16px;border-radius:12px;margin:12px}
+    input, select {background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); padding:12px; color:#fff; border-radius:10px; width:100%}
+    .btn-primary{background:#1f6feb;color:#fff;padding:12px;border-radius:10px;border:0;font-weight:700}
+    .btn-success{background:#10b981;color:#042018;padding:12px;border-radius:10px;border:0;font-weight:700}
+    .glow-green { box-shadow: 0 6px 18px rgba(16,185,129,0.18); }
+    .glow-red { box-shadow: 0 6px 18px rgba(239,68,68,0.18); }
+    .lock-center{display:flex;align-items:center;justify-content:center;padding:48px}
   </style>
 </head>
 <body>
 
-  <!-- Intro -->
+  <!-- Intro: autoplay video (no skip) -->
   <div id="intro" class="center">
-    <video id="introVideo" playsinline autoplay style="width:100%;max-width:600px;border-radius:12px">
+    <video id="introVideo" playsinline autoplay muted style="width:92%;max-width:720px;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6)">
       <source src="VID-20250904-WA0075.mp4" type="video/mp4" />
+      Your browser doesn't support HTML video.
     </video>
-    <button id="skipIntro" class="skip-btn">Skip</button>
   </div>
 
-  <!-- Auth -->
-  <div id="auth" class="card hidden" style="max-width:680px;margin:20px auto">
-    <h2 class="text-2xl font-bold">Welcome to ProTraderHack</h2>
-    <div style="margin-top:12px">
-      <input id="email" placeholder="Email" class="w-full p-3 rounded bg-[#0b1220]" />
-      <input id="password" type="password" placeholder="Password" class="w-full p-3 rounded bg-[#0b1220] mt-3" />
-      <input id="username" placeholder="username (a-z0-9, ≤12 chars)" class="w-full p-3 rounded bg-[#0b1220] mt-3" />
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button id="signupBtn" class="px-4 py-2 rounded" style="background:#10b981">Sign up</button>
-        <button id="loginBtn" class="px-4 py-2 rounded" style="background:#2563eb">Login</button>
+  <!-- Auth card -->
+  <div id="auth" class="card hidden" style="max-width:760px;margin:28px auto">
+    <h1 style="font-size:32px;font-weight:800;margin-bottom:12px">Welcome to ProTraderHack</h1>
+
+    <div id="authForms">
+      <!-- Signup -->
+      <div id="signupCard">
+        <input id="email" placeholder="Email" type="email" />
+        <div style="height:12px"></div>
+        <input id="password" placeholder="Password" type="password" />
+        <div style="height:12px"></div>
+        <button id="signupBtn" class="btn-primary" style="width:100%">Sign Up</button>
+        <div style="height:12px"></div>
+        <div style="text-align:center;color:var(--muted)">or</div>
+        <div style="height:12px"></div>
+        <button id="googleBtn" class="btn-success" style="width:100%">Continue with Google</button>
+        <div style="height:12px"></div>
+        <div style="text-align:center;color:var(--muted)">Already have an account? <a href="#" id="gotoLogin" style="color:#7dd3fc">Log In</a></div>
       </div>
-      <div style="margin-top:8px">
-        <button id="googleBtn" class="px-3 py-2 rounded" style="background:#ef4444">Continue with Google</button>
+
+      <!-- Login -->
+      <div id="loginCard" style="display:none">
+        <input id="emailL" placeholder="Email or Phone" type="text" />
+        <div style="height:12px"></div>
+        <input id="passwordL" placeholder="Password" type="password" />
+        <div style="height:12px"></div>
+        <button id="loginBtn" class="btn-primary" style="width:100%">Login</button>
+        <div style="height:12px"></div>
+        <div style="text-align:center;color:var(--muted)"><a href="#" id="gotoSignup" style="color:#7dd3fc">Create account</a></div>
       </div>
     </div>
   </div>
 
-  <!-- Main app -->
-  <div id="app" class="hidden" style="max-width:900px;margin:12px auto">
+  <!-- Username creation (after recaptcha) -->
+  <div id="usernameCard" class="card hidden" style="max-width:720px;margin:28px auto;text-align:center">
+    <h2 style="font-weight:800;font-size:28px">Set Up Username</h2>
+    <div style="height:18px"></div>
+    <input id="usernameInput" placeholder="username (a-z0-9, max 12 chars)" />
+    <div style="height:12px"></div>
+    <div style="color:var(--muted)">Cannot change later</div>
+    <div style="height:16px"></div>
+    <button id="confirmUsernameBtn" class="btn-primary" style="width:100%">Confirm</button>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" class="hidden" style="max-width:960px;margin:12px auto">
+
     <!-- Home -->
     <div id="home" class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3 class="text-xl font-bold">Home</h3>
-        <div><button id="walletBtn" class="px-3 py-1 rounded" style="background:#0b1220">Wallet</button></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="pinnedBalance" style="font-weight:700;color:#fff">Pin Balance</div>
+        </div>
+        <div>
+          <button id="walletBtn" class="btn-primary">Wallet</button>
+        </div>
       </div>
 
-      <div id="homeLock" style="text-align:center;padding:48px"><span style="font-size:48px;cursor:pointer" id="homeLockBtn">🔒</span></div>
+      <div id="homeLock" class="lock-center">
+        <span id="homeLockBtn" style="font-size:54px;cursor:pointer">🔒</span>
+      </div>
 
-      <div id="homeContent" class="hidden">
-        <div id="chart" style="height:360px;background:#000;border-radius:8px;margin-top:12px"></div>
-        <div style="display:flex;justify-content:space-between;margin-top:8px">
-          <div>
-            <button id="buyBtn" class="px-4 py-2 rounded" style="background:#10b981">Buy</button>
-            <button id="sellBtn" class="px-4 py-2 rounded" style="background:#ef4444">Sell</button>
+      <div id="homeContent" style="display:none">
+        <h3 style="margin-top:8px">Favourites</h3>
+        <div id="favsList" style="display:flex;gap:8px;overflow:auto;padding-top:8px"></div>
+
+        <h3 style="margin-top:12px">My Assets</h3>
+        <div id="assetsList" style="padding-top:8px"></div>
+
+        <div id="chartArea" style="margin-top:12px">
+          <!-- TradingView embed placeholder -->
+          <div id="tvChart" style="height:420px;background:#000;border-radius:8px;color:#fff;display:flex;align-items:center;justify-content:center">
+            <div id="tvPlaceholder">Select a symbol to open TradingView chart</div>
           </div>
-          <div id="signalBadge" style="padding:8px;border-radius:8px;background:#0b1220">HOLD</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:12px">
+          <div>
+            <button id="buyBtn" class="btn-success">Buy</button>
+            <button id="sellBtn" class="btn-primary">Sell</button>
+          </div>
+          <div id="signalBadge" style="padding:8px;border-radius:8px;background:#071428">HOLD</div>
         </div>
       </div>
     </div>
 
     <!-- Search -->
-    <div id="search" class="card hidden">
-      <div style="display:flex;gap:8px">
-        <input id="searchInput" class="w-full p-3 rounded bg-[#0b1220]" placeholder="Search symbol (e.g. BTC/USDT)" />
-        <button id="addToWatch" class="px-4 py-2 rounded" style="background:#2563eb">Add</button>
-      </div>
-      <div id="searchResults" style="margin-top:8px"></div>
+    <div id="search" class="card" style="display:none">
+      <input id="searchInput" placeholder="Search symbol e.g. BTC-USD or AAPL" />
+      <div style="height:12px"></div>
+      <div id="searchResults"></div>
     </div>
 
     <!-- Admin -->
-    <div id="admin" class="card hidden">
+    <div id="admin" class="card" style="display:none">
       <h3>Admin</h3>
       <div style="display:flex;gap:8px">
-        <input id="adminKey" placeholder="Admin key" class="p-2 rounded bg-[#0b1220]" />
-        <button id="adminUnlock" class="px-3 py-2 rounded" style="background:#10b981">Unlock</button>
+        <input id="adminKey" placeholder="Admin key (vamya or pthowner16)" />
+        <button id="adminUnlock" class="btn-primary">Unlock</button>
       </div>
-      <div id="adminArea" class="hidden" style="margin-top:12px">
+      <div id="adminArea" style="display:none;margin-top:12px">
+        <h4>Create Key</h4>
         <div style="display:flex;gap:8px">
-          <input id="newKey" placeholder="new key" class="p-2 rounded bg-[#0b1220]" />
-          <select id="newKeyDays" class="p-2 rounded bg-[#0b1220]">
-            <option value="">Permanent</option><option value="1">1 day</option><option value="7">7 days</option><option value="30">30 days</option><option value="50">50 days</option>
+          <input id="newKey" placeholder="new key string (no spaces)" />
+          <select id="newKeyMonths">
+            <option value="">Permanent</option>
+            <option value="1">1 month</option>
+            <option value="3">3 months</option>
+            <option value="6">6 months</option>
+            <option value="12">12 months</option>
           </select>
-          <button id="createKeyBtn" class="px-3 py-2 rounded" style="background:#2563eb">Create</button>
+          <input id="newKeyMaxDevices" placeholder="max devices (1..50 or 0 unlimited)" style="width:160px" />
+          <button id="createKeyBtn" class="btn-success">Create</button>
         </div>
-        <div id="keysList" style="margin-top:12px"></div>
-        <h4 style="margin-top:12px">Users</h4>
-        <div id="usersList" style="margin-top:8px"></div>
+        <div style="height:12px"></div>
+        <div id="keysList"></div>
+        <div style="height:12px"></div>
+        <h4>Users</h4>
+        <div id="usersList"></div>
       </div>
     </div>
 
     <!-- Account -->
-    <div id="account" class="card hidden">
+    <div id="account" class="card" style="display:none">
       <h3>Account</h3>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div>Zerodha <button class="connectBtn" data-broker="zerodha">Connect</button></div>
-        <div>AngelOne <button class="connectBtn" data-broker="angelone">Connect</button></div>
-        <div>Binance <button class="connectBtn" data-broker="binance">Connect</button></div>
-        <div>Exness <button class="connectBtn" data-broker="exness">Connect</button></div>
+      <div id="acctSummary" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div id="acctUsername" style="font-weight:700"></div>
+          <div id="acctEmail" style="color:var(--muted)"></div>
+        </div>
+        <div style="text-align:right">
+          <div id="acctPlan">Plan: Free</div>
+          <div id="acctValidity">Validity: Unlimited</div>
+          <button id="upgradeBtn" class="btn-primary">Upgrade</button>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div>
+        <button id="keyBtn" class="btn-primary">Key 🗝️</button>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div>
+        <h4>Brokers</h4>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>AngelOne</div><div><button class="connectBtn" data-broker="angelone">Connect</button></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>Zerodha</div><div><button class="connectBtn" data-broker="zerodha">Connect</button></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>Exness</div><div><button class="connectBtn" data-broker="exness">Connect</button></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>Binance</div><div><button class="connectBtn" data-broker="binance">Connect</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+      <div style="display:flex;gap:8px">
+        <button id="logoutBtn" class="btn-primary">Logout</button>
+        <button id="deleteAccountBtn" class="btn-primary" style="background:#ef4444">Delete account</button>
       </div>
     </div>
 
   </div>
 
   <!-- wallet popup -->
-  <div id="walletPopup" class="card hidden" style="position:fixed;left:16px;right:16px;bottom:90px">
+  <div id="walletPopup" class="card hidden" style="position:fixed;left:12px;right:12px;bottom:90px;border-radius:12px">
     <div style="display:flex;justify-content:space-between">
       <h4>Wallet</h4><div><button id="walletClose">Close</button></div>
     </div>
     <div id="walletBalances" style="margin-top:8px"></div>
   </div>
 
-  <!-- bottom nav -->
+  <!-- Bottom nav -->
   <div class="nav" id="bottomNav" style="display:none">
     <button onclick="openTab('home')">Home</button>
     <button onclick="openTab('search')">Search</button>
@@ -123,291 +219,356 @@
     <button onclick="openTab('account')">Account</button>
   </div>
 
-  <!-- firebase -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
 
   <script>
-  // --------- CONFIG ----------
-  const BACKEND = "https://protrader-backend-sbus.onrender.com"; // update if changed
-  const VAPID_KEY = "P1K_g5AMzmP08VhS1x79iNH_ofrEZQqlwKAn--HhtWg"; // set from Firebase Console -> Cloud Messaging -> Web Push certs
+  // ---------- CONFIG ----------
+  const BACKEND = "https://protrader-backend-sbus.onrender.com"; // update if different
+  const VAPID_KEY = "P1K_g5AMzmP08VhS1x79iNH_ofrEZQqlwKAn--HhtWg"; // YOUR VAPID PUBLIC KEY (you supplied)
+  const RECAPTCHA_SITE_KEY = "YOUR_RECAPTCHA_SITE_KEY_HERE"; // replace with real site key
   const firebaseConfig = {
     apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
     authDomain: "protraderhack-d67f0.firebaseapp.com",
     projectId: "protraderhack-d67f0",
-    storageBucket: "protraderhack-d67f0.appspot.com",
+    storageBucket: "protraderhack-d67f0.firebasestorage.app",
     messagingSenderId: "1062485216321",
     appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
   };
+
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
   const messaging = firebase.messaging();
 
-  // --------- intro controls ----------
+  // ---------- Intro handling ----------
   const intro = document.getElementById('intro');
   const introVideo = document.getElementById('introVideo');
-  const skipIntro = document.getElementById('skipIntro');
-
-  // autoplay with sound attempt
   introVideo.muted = false;
-  introVideo.play().catch(()=>{ introVideo.muted = true; introVideo.play(); });
+  // Try playing with sound. If autoplay blocked -- play muted then unmute later after user gesture.
+  introVideo.play().catch(()=> { introVideo.muted = true; introVideo.play().catch(()=>{}); });
 
-  function endIntroGotoAuth(){
-    intro.style.display='none';
-    document.getElementById('auth').classList.remove('hidden');
+  function finishIntro() {
+    intro.style.display = 'none';
+    // if user logged in show app, else show auth
+    if (auth.currentUser) startAppForUser(auth.currentUser.uid);
+    else document.getElementById('auth').classList.remove('hidden');
   }
-  introVideo.onended = endIntroGotoAuth;
-  skipIntro.onclick = endIntroGotoAuth;
+  introVideo.onended = finishIntro;
 
-  // --------- auth UI handlers ----------
+  // ---------- Auth UI ----------
+  document.getElementById('gotoLogin').onclick = (e)=>{ e.preventDefault(); document.getElementById('signupCard').style.display='none'; document.getElementById('loginCard').style.display='block'; };
+  document.getElementById('gotoSignup').onclick = (e)=>{ e.preventDefault(); document.getElementById('signupCard').style.display='block'; document.getElementById('loginCard').style.display='none'; };
+
   document.getElementById('signupBtn').onclick = async ()=>{
     const email = document.getElementById('email').value.trim();
-    const pass = document.getElementById('password').value;
-    const username = document.getElementById('username').value.trim();
-    if(!/^[a-z0-9]{1,12}$/.test(username)) return alert("Username invalid");
+    const password = document.getElementById('password').value;
+    if(!email || !password) return alert("Enter email and password");
     try {
-      const res = await auth.createUserWithEmailAndPassword(email, pass);
+      const res = await auth.createUserWithEmailAndPassword(email, password);
       const uid = res.user.uid;
-      await db.collection('users').doc(uid).set({username, created: new Date().toISOString()});
-      postLoginSetup(uid);
+      // show recaptcha step (placeholder)
+      // TODO: Implement server-side recaptcha verification
+      // Directly show username step
+      document.getElementById('auth').classList.add('hidden');
+      document.getElementById('usernameCard').classList.remove('hidden');
     } catch(e){ alert("Signup error: "+e.message); }
   };
+
   document.getElementById('loginBtn').onclick = async ()=>{
-    const email = document.getElementById('email').value.trim();
-    const pass = document.getElementById('password').value;
+    const email = document.getElementById('emailL').value.trim();
+    const password = document.getElementById('passwordL').value;
+    if(!email || !password) return alert("Enter credentials");
     try {
-      const r = await auth.signInWithEmailAndPassword(email, pass);
-      postLoginSetup(r.user.uid);
+      const res = await auth.signInWithEmailAndPassword(email, password);
+      // show recaptcha (placeholder)
+      document.getElementById('auth').classList.add('hidden');
+      startAppForUser(res.user.uid);
     } catch(e){ alert("Login error: "+e.message); }
   };
+
   document.getElementById('googleBtn').onclick = async ()=>{
+    const provider = new firebase.auth.GoogleAuthProvider();
     try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      const r = await auth.signInWithPopup(provider);
-      const uid = r.user.uid;
-      // ensure username
+      const res = await auth.signInWithPopup(provider);
+      const uid = res.user.uid;
+      // show username flow if new user
       const ud = await db.collection('users').doc(uid).get();
-      if(!ud.exists) await db.collection('users').doc(uid).set({username: r.user.displayName ? r.user.displayName.replace(/\s+/g,'').toLowerCase().slice(0,12) : 'user'+Date.now()});
-      postLoginSetup(uid);
-    } catch(e){ alert(e.message); }
+      if(!ud.exists) {
+        document.getElementById('auth').classList.add('hidden');
+        document.getElementById('usernameCard').classList.remove('hidden');
+      } else {
+        startAppForUser(uid);
+      }
+    } catch(e){ alert("Google login error: "+e.message); }
   };
 
-  // after login -> show app, ask for notifications if user has valid key
-  async function postLoginSetup(uid){
+  // ---------- Username confirm ----------
+  document.getElementById('confirmUsernameBtn').onclick = async ()=>{
+    const uid = auth.currentUser.uid;
+    const uname = (document.getElementById('usernameInput').value || "").trim();
+    if(!/^[a-z0-9]{1,12}$/.test(uname)) return alert("Username invalid. Only lowercase letters and numbers, max 12.");
+    // check uniqueness
+    const snap = await db.collection('users').where('username','==',uname).limit(1).get();
+    if(!snap.empty) return alert("Username taken");
+    // save user doc
+    const user = auth.currentUser;
+    await db.collection('users').doc(user.uid).set({username: uname, email: user.email || null, created: new Date().toISOString()}, {merge:true});
+    document.getElementById('usernameCard').classList.add('hidden');
+    startAppForUser(user.uid);
+  };
+
+  // ---------- After login setup ----------
+  async function startAppForUser(uid){
     document.getElementById('auth').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     document.getElementById('bottomNav').style.display='flex';
+    // try register service worker and get fcm token only if user has valid key
+    try { await navigator.serviceWorker.register('/firebase-messaging-sw.js'); } catch(e){ console.warn('sw register error', e); }
+    // fetch user's doc
+    const udoc = await db.collection('users').doc(uid).get();
+    const udata = udoc.exists ? udoc.data() : {};
+    document.getElementById('acctUsername').innerText = udata.username || uid;
+    document.getElementById('acctEmail').innerText = udata.email || '';
+    // attempt to register for notifications (permission requested when key valid)
+    if(await isUserKeyValid(uid)) {
+      await registerFcmToken(uid);
+    }
+    // refresh balances
+    refreshBalances(uid);
+    loadFavorites(uid);
+    loadKeysAndUsersForAdmin();
     openTab('home');
-    // register service worker for FCM
-    if('serviceWorker' in navigator){
-      try{
-        await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      }catch(e){ console.warn('sw register failed', e); }
-    }
-    // get user watchlist from Firestore; if none create empty
-    const wDoc = await db.collection('users').doc(uid).collection('meta').doc('watchlist').get();
-    if(!wDoc.exists) await db.collection('users').doc(uid).collection('meta').doc('watchlist').set({items:[]});
-    // ask for notification permission only if user has a valid key
-    const keyValid = await checkKeyValidity(uid);
-    if(keyValid){
-      await requestNotificationPermission(uid);
-    }
-    await refreshBalances(uid);
-    loadAdminData();
   }
 
-  async function checkKeyValidity(uid){
-    // basic check: see if user doc has key and expiry > now
-    const udoc = await db.collection('users').doc(uid).get();
-    if(!udoc.exists) return false;
-    const d = udoc.data() || {};
-    if(d.key && d.key_expiry){
-      try {
-        if(new Date(d.key_expiry) > new Date()) return true;
-      } catch(e){}
-    }
-    // fallback: ask backend validate endpoint if you implemented one
+  // ---------- Key validation check (calls backend validate_key or local) ----------
+  async function isUserKeyValid(uid){
     try {
-      const key = d.key || null;
+      const udoc = await db.collection('users').doc(uid).get();
+      if(!udoc.exists) return false;
+      const data = udoc.data() || {};
+      const key = data.key;
       if(!key) return false;
+      // call backend validate_key
       const res = await fetch(BACKEND + "/validate_key", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})});
       const j = await res.json();
       return j.valid === true;
     } catch(e){ return false; }
   }
 
-  async function requestNotificationPermission(uid){
+  // ---------- FCM token registration ----------
+  async function registerFcmToken(uid){
     try {
       const perm = await Notification.requestPermission();
       if(perm !== 'granted') return;
-      // get FCM token
-      const currentToken = await messaging.getToken({vapidKey: VAPID_KEY});
-      if(currentToken){
-        // send to backend to store
-        await fetch(BACKEND + "/save_fcm_token", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, token: currentToken})});
-        // also store locally in Firestore under user meta
-        await db.collection('users').doc(uid).collection('meta').doc('fcm').set({token: currentToken, created: new Date().toISOString()});
+      const token = await messaging.getToken({vapidKey: VAPID_KEY});
+      if(token) {
+        await fetch(BACKEND + "/save_fcm_token", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, token})});
+        await db.collection('users').doc(uid).set({fcmToken: token}, {merge:true});
       }
-    } catch(e){
-      console.warn("notif permission error", e);
-    }
+    } catch(e){ console.warn("fcm error", e); }
   }
 
-  // handle incoming messages while page in foreground
   messaging.onMessage(payload=>{
-    console.log("Message foreground", payload);
-    // Optionally show a custom toast
-    alert((payload.notification && payload.notification.title) ? payload.notification.title + "\n" + payload.notification.body : JSON.stringify(payload));
+    console.log("Foreground message", payload);
+    // show alert (replace with toast in real UI)
+    if(payload && payload.notification) alert(payload.notification.title + "\n" + (payload.notification.body||''));
   });
 
-  // register service worker file must be served at root: /firebase-messaging-sw.js
-  // We'll give the SW file content below.
-
-  // ---------- watchlist controls ----------
-  document.getElementById('addToWatch').onclick = async ()=>{
-    const symbol = document.getElementById('searchInput').value.trim();
-    if(!symbol) return alert("Enter symbol");
-    const uid = auth.currentUser.uid;
-    const wref = db.collection('users').doc(uid).collection('meta').doc('watchlist');
-    const wdoc = await wref.get();
-    let items = [];
-    if(wdoc.exists) items = wdoc.data().items || [];
-    if(!items.includes(symbol)) items.push(symbol.toUpperCase());
-    await wref.set({items, updated: new Date().toISOString()});
-    // send watchlist to backend as well to speed matching (optional)
-    await fetch(BACKEND + "/watchlist", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, items})});
-    alert(symbol + " added to watchlist");
-    document.getElementById('searchInput').value = '';
+  // ---------- Lock / unlock home and search ----------
+  document.getElementById('homeLockBtn').onclick = async ()=>{
+    const key = prompt("Enter key to unlock Home & Search (pth7, key15, ishaan30, splkey50, ishaan)");
+    if(!key) return;
+    try {
+      const res = await fetch(BACKEND + "/validate_key", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})});
+      const j = await res.json();
+      if(j.valid) {
+        // store key in user doc
+        const uid = auth.currentUser.uid;
+        // compute expiry locally if key in known set
+        let expiry = null;
+        if(key === 'pth7') expiry = new Date(Date.now() + 7*24*3600*1000).toISOString();
+        if(key === 'key15') expiry = new Date(Date.now() + 15*24*3600*1000).toISOString();
+        if(key === 'ishaan30') expiry = new Date(Date.now() + 30*24*3600*1000).toISOString();
+        if(key === 'splkey50') expiry = new Date(Date.now() + 50*24*3600*1000).toISOString();
+        if(key === 'ishaan') expiry = null;
+        await db.collection('users').doc(uid).set({key: key, key_expiry: expiry}, {merge:true});
+        document.getElementById('homeLock').style.display='none';
+        document.getElementById('homeContent').style.display = 'block';
+        document.getElementById('search').style.display = 'block';
+        // register fcm token now if permission not requested earlier
+        await registerFcmToken(uid);
+      } else {
+        alert("Invalid key");
+      }
+    } catch(e){ alert("validation error"); }
   };
 
-  // ---------- publish_signal example (optional) ----------
-  // your signal worker will call backend /publish_signal to broadcast
-  // fetch(BACKEND + "/publish_signal", {method:'POST', body: JSON.stringify({symbol:'BTCUSDT', signal:'BUY', title:'Buy BTC', body:'Strong momentum'})})
+  // ---------- Tab navigation ----------
+  function openTab(name){
+    ['home','search','admin','account'].forEach(n=> document.getElementById(n).style.display = 'none');
+    document.getElementById(name).style.display = (name === 'home' ? '' : '') ;
+    document.getElementById(name).style.display = '';
+  }
+  window.openTab = openTab;
 
-  // ---------- admin handlers ----------
+  // ---------- Favorites & search ----------
+  async function loadFavorites(uid){
+    try {
+      const wref = db.collection('users').doc(uid).collection('meta').doc('watchlist');
+      const wdoc = await wref.get();
+      const items = wdoc.exists ? (wdoc.data().items || []) : [];
+      const favsList = document.getElementById('favsList');
+      favsList.innerHTML = '';
+      for(const s of items){
+        const el = document.createElement('div');
+        el.style.minWidth='160px';
+        el.style.background='#061428';
+        el.style.padding='8px';
+        el.style.borderRadius='8px';
+        el.style.cursor='pointer';
+        el.innerHTML = `<div style="font-weight:700">${s}</div><div style="color:var(--muted);font-size:12px">Tap to open chart</div>`;
+        el.onclick = ()=> openSymbolChart(s);
+        favsList.appendChild(el);
+      }
+    } catch(e){ console.warn(e); }
+  }
+
+  async function openSymbolChart(sym){
+    document.getElementById('tvPlaceholder').innerText = `Loading TradingView chart for ${sym} ...`;
+    // Replace with actual TradingView widget embed (script-based) or iframe
+    // For quick placeholder:
+    document.getElementById('tvChart').innerHTML = `<iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(sym)}&saveimage=1" style="width:100%;height:100%;border:0;border-radius:8px"></iframe>`;
+  }
+
+  // ---------- Search results and adding to favorites ----------
+  document.getElementById('searchInput').addEventListener('keydown', async (e)=>{
+    if(e.key === 'Enter') {
+      const q = e.target.value.trim();
+      if(!q) return;
+      // For demo: show result and Add star
+      const list = document.getElementById('searchResults');
+      list.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#061428;border-radius:8px">
+        <div>${q}</div><div><button onclick="addToWatchlist('${q}')">☆ Add</button></div></div>`;
+    }
+  });
+
+  window.addToWatch = async function(sym){ addToWatchlist(sym); };
+
+  async function addToWatchlist(sym){
+    try {
+      const uid = auth.currentUser.uid;
+      const wref = db.collection('users').doc(uid).collection('meta').doc('watchlist');
+      const wdoc = await wref.get();
+      let items = wdoc.exists ? (wdoc.data().items || []) : [];
+      if(!items.includes(sym.toUpperCase())) items.push(sym.toUpperCase());
+      await wref.set({items, updated: new Date().toISOString()});
+      await fetch(BACKEND + "/watchlist", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, items})});
+      alert(sym + " added to watchlist");
+      loadFavorites(uid);
+    } catch(e){ console.warn(e); alert("Failed to add"); }
+  }
+
+  // ---------- Wallet & balances ----------
+  document.getElementById('walletBtn').onclick = ()=> document.getElementById('walletPopup').classList.toggle('hidden');
+  document.getElementById('walletClose').onclick = ()=> document.getElementById('walletPopup').classList.add('hidden');
+
+  async function refreshBalances(uid){
+    try {
+      const brokers = ['zerodha','angelone','binance','exness'];
+      const walletHtml = [];
+      for(const b of brokers){
+        const res = await fetch(BACKEND + "/balance", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, broker:b})});
+        const j = await res.json();
+        walletHtml.push(`<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,0.03)">${b.toUpperCase()}<div>${j.balance || 'Connect Broker'}</div></div>`);
+      }
+      document.getElementById('walletBalances').innerHTML = walletHtml.join('');
+    } catch(e){ console.warn(e); }
+  }
+
+  // ---------- Admin: create/list keys & users ----------
   document.getElementById('adminUnlock').onclick = async ()=>{
-    const k = document.getElementById('adminKey').value.trim();
-    if(!k) return alert("Enter admin key");
-    // validate locally against known admin keys OR call backend
-    if(k === 'vamya' || k === 'pthowner16'){
-      document.getElementById('adminArea').classList.remove('hidden');
-      loadAdminData();
+    const key = document.getElementById('adminKey').value.trim();
+    if(!key) return alert("Enter admin key");
+    if(key === 'vamya' || key === 'pthowner16' || key === 'vamya_pth_secret_default'){
+      document.getElementById('adminArea').style.display = 'block';
+      loadKeysAndUsersForAdmin(key);
     } else {
       alert("Invalid admin key");
     }
   };
-  document.getElementById('createKeyBtn').onclick = async ()=>{
-    const newKey = document.getElementById('newKey').value.trim();
-    const days = document.getElementById('newKeyDays').value;
-    if(!newKey) return alert("enter key");
-    // call backend admin/create_key if available, else create in Firestore
-    const admin_key = document.getElementById('adminKey').value.trim();
-    try {
-      const res = await fetch(BACKEND + "/admin/create_key", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({admin_key, new_key: newKey, days: days || null})});
-      const j = await res.json();
-      if(j.created || j.ok) { alert("Created"); loadAdminData(); } else alert("Error: "+JSON.stringify(j));
-    } catch(e){ alert("create key error: " + e.message); }
-  };
 
-  async function loadAdminData(){
-    // show keys from Firestore
-    const snap = await db.collection('keys').get();
-    let html = '';
-    snap.forEach(d=>{ const info = d.data()||{}; html += `<div style="padding:6px;border-bottom:1px solid #123">${d.id} — ${info.role||'user'} — ${info.expiry||'permanent'}</div>`;});
-    document.getElementById('keysList').innerHTML = html;
-    // users
-    const usersSnap = await db.collection('users').limit(200).get();
-    let uh = '';
-    usersSnap.forEach(u=> { const data = u.data()||{}; uh += `<div style="padding:6px;border-bottom:1px solid #123">${data.username||u.id} — key:${data.key||'-'}</div>`; });
-    document.getElementById('usersList').innerHTML = uh;
+  async function loadKeysAndUsersForAdmin(admin_secret){
+    try {
+      // fetch keys from backend
+      const res = await fetch(BACKEND + "/admin/list_keys", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({admin_secret: admin_secret || 'vamya'})});
+      const keys = await res.json();
+      const keysList = document.getElementById('keysList');
+      keysList.innerHTML = keys.map(k => `<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.02)">${k.key} — ${k.type} — ${k.expiry || 'perm'}</div>`).join('');
+      // users
+      const r2 = await fetch(BACKEND + "/admin/users", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({admin_secret: admin_secret || 'vamya'})});
+      const users = await r2.json();
+      document.getElementById('usersList').innerHTML = users.map(u => `<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.02)">${u.username || u.uid} — key:${u.key || '-'} — expiry:${u.key_expiry||'-'}</div>`).join('');
+    } catch(e){ console.warn(e); }
   }
 
-  // ---------- connect broker buttons ----------
+  document.getElementById('createKeyBtn').onclick = async ()=>{
+    const newKey = document.getElementById('newKey').value.trim();
+    const months = document.getElementById('newKeyMonths').value || null;
+    const max_devices = parseInt(document.getElementById('newKeyMaxDevices').value || "0") || 0;
+    if(!newKey) return alert("Enter new key");
+    try {
+      const res = await fetch(BACKEND + "/admin/create_key", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({admin_secret: 'vamya', new_key: newKey, type: 'Basic', months: months, max_devices})});
+      const json = await res.json();
+      if(json.created || json.ok) { alert("Key created"); loadKeysAndUsersForAdmin('vamya'); } else alert("Error: "+JSON.stringify(json));
+    } catch(e){ alert("create key error"); }
+  };
+
+  // ---------- Broker connect UI ----------
   document.querySelectorAll('.connectBtn').forEach(btn=>{
     btn.onclick = async (e)=>{
       const b = e.target.dataset.broker;
       const uid = auth.currentUser.uid;
-      const api_key = prompt("API Key for "+b);
-      const secret = prompt("Secret for "+b);
-      if(!api_key || !secret) return alert("Cancelled");
-      await fetch(BACKEND + "/broker/connect", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, broker: b, api_key, secret})});
+      const api = prompt("API Key for " + b);
+      const secret = prompt("Secret Key for " + b);
+      if(!api || !secret) return alert("Cancelled");
+      await fetch(BACKEND + "/broker/connect", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, broker: b, api_key: api, secret})});
       alert(b + " connected");
-      await refreshBalances(uid);
-    }
+      refreshBalances(uid);
+    };
   });
 
-  // ---------- refresh balances ----------
-  async function refreshBalances(uid){
-    if(!uid) return;
-    const brokers = ['zerodha','angelone','binance','exness'];
-    let walletHtml = '';
-    for(const b of brokers){
-      const res = await fetch(BACKEND + "/balance", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, broker:b})});
-      const j = await res.json();
-      const bal = j.balance || 'Connect Broker';
-      walletHtml += `<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #123">${b.toUpperCase()} <div>${bal}</div></div>`;
-    }
-    document.getElementById('walletBalances').innerHTML = walletHtml;
-  }
-  document.getElementById('walletBtn').onclick = ()=> document.getElementById('walletPopup').classList.toggle('hidden');
-  document.getElementById('walletClose').onclick = ()=> document.getElementById('walletPopup').classList.add('hidden');
-
-  // ---------- tab navigation ----------
-  function openTab(name){
-    ['home','search','admin','account'].forEach(n=> document.getElementById(n).classList.add('hidden'));
-    document.getElementById(name).classList.remove('hidden');
-  }
-  window.openTab = openTab;
-
-  // ---------- home lock/unlock ----------
-  document.getElementById('homeLockBtn').onclick = async ()=>{
-    const key = prompt("Enter key to unlock home/search:");
-    // call backend validate_key if exists
-    try {
-      const res = await fetch(BACKEND + "/validate_key", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})});
-      const j = await res.json();
-      if(j.valid){
-        document.getElementById('homeLock').style.display='none';
-        document.getElementById('homeContent').classList.remove('hidden');
-        document.getElementById('search').classList.remove('hidden');
-      } else alert("Invalid key");
-    } catch(e){ alert("validation failed"); }
+  // ---------- Logout & delete ----------
+  document.getElementById('logoutBtn').onclick = async ()=> { await auth.signOut(); location.reload(); };
+  document.getElementById('deleteAccountBtn').onclick = async ()=> {
+    if(!confirm("Delete account? This cannot be undone.")) return;
+    const uid = auth.currentUser.uid;
+    // delete firestore user doc & sign out (backend caution)
+    await db.collection('users').doc(uid).delete();
+    await auth.currentUser.delete().catch(()=>{});
+    alert("Account deleted");
+    location.reload();
   };
 
-  // ---------- Auth state handling ----------
-  auth.onAuthStateChanged(async user => {
+  // ---------- On auth state change ----------
+  auth.onAuthStateChanged(async user=> {
     if(user){
-      document.getElementById('auth').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden');
-      document.getElementById('bottomNav').style.display='flex';
-      // register service worker
-      if('serviceWorker' in navigator){
-        try{ await navigator.serviceWorker.register('/firebase-messaging-sw.js'); }catch(e){}
-      }
-      // attempt to fetch and refresh balances
-      await refreshBalances(user.uid);
+      // if intro finished hide auth and start
+      if(intro.style.display === 'none') startAppForUser(user.uid);
     } else {
-      // show auth after intro if not logged in
-      if(!intro.classList.contains('hidden')){} else { document.getElementById('auth').classList.remove('hidden'); }
+      // show auth if intro finished
+      if(intro.style.display === 'none') document.getElementById('auth').classList.remove('hidden');
     }
   });
 
-  // Expose mapping to global
-  window.addToWatch = async function(sym){
-    const uid = auth.currentUser && auth.currentUser.uid;
-    if(!uid) return alert("Login");
-    const wref = db.collection('users').doc(uid).collection('meta').doc('watchlist');
-    const wdoc = await wref.get();
-    let items = wdoc.exists ? (wdoc.data().items||[]) : [];
-    if(!items.includes(sym)) items.push(sym.toUpperCase());
-    await wref.set({items, updated: new Date().toISOString()});
-    await fetch(BACKEND + "/watchlist", {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({uid, items})});
-    alert("Added "+sym);
+  // Utility: open TradingView for a given symbol (maximize)
+  window.openTradingView = function(symbol){
+    window.open(`https://www.tradingview.com/symbols/${encodeURIComponent(symbol)}`, '_blank');
   };
 
   </script>
 </body>
-        </html>
+</html>
