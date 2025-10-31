@@ -1,5 +1,6 @@
-importScripts("https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js");
+// firebase-messaging-sw.js
+importScripts('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js');
 
 firebase.initializeApp({
   apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
@@ -13,9 +14,10 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
-  console.log("🔕 Background notification:", payload);
-  self.registration.showNotification(
-    payload.notification.title,
-    { body: payload.notification.body }
-  );
+  const title = (payload.notification && payload.notification.title) || 'ProTraderHack';
+  const options = {
+    body: (payload.notification && payload.notification.body) || '',
+    icon: '/icons/icon-192.png'
+  };
+  self.registration.showNotification(title, options);
 });
